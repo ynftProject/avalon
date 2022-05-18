@@ -17,8 +17,6 @@ let config = {
             b58Alphabet: '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz',
             // the block #0 genesis timestamp
             block0ts: 1601477849000,
-            // the block hash serialization revision
-            blockHashSerialization: 1,
             // the block time in ms
             blockTime: 3000,
             // the number of ms needed for 0.01 DTC to generate 1 byte of bw
@@ -50,17 +48,14 @@ let config = {
             ecoStartRent: 0.75,
             // the maximum number of follows a single account can do
             followsMax: 2000,
-            // F
-            hotfix1: false,
             // the max size of a stringified json input (content / user profile)
             // best if kept slightly lower than bwMax
             jsonMaxBytes: 60000,
             // the max length of a key identifier
             keyIdMaxLength: 25,
-            // how many max leaders there can be, and how much tokens and VT they earn per "mined" block
+            // how many max leaders there can be, and how much tokens they earn per "mined" block
             leaderReward: 1,
-            leaderRewardVT: 500,
-            leaders: 10,
+            leaders: 15,
             // how long of the end of the block hash is used for the leader pseudo random generator shuffle
             leaderShufflePrecision: 6,
             // the maximum number of leaders an account can vote for
@@ -114,49 +109,25 @@ let config = {
             // key: transaction id (see transaction.js:TransactionType)
             // value: null/0 (default): enabled, 1: disabled, 2: master-only
             txLimits: {
-                14: 2,
-                15: 2,
-                19: 1
+                15: 2
             },
             // the number of ms needed for 0.01 DTC to generate 1 vt
             vtGrowth: 360000000, // +1 vt per hour per DTC (3600 * 1000 * 100)
-            vtPerBurn: 6 // can be updated in the future to modify incentives
-        },
-        1000090: {
-            leaders: 13,
-            leaderRewardVT: 100,
-            vtPerBurn: 44
-        },
-        4800000: {
-            // Author tip hardfork
-            txLimits: {
-                14: 2,
-                15: 2,
-                19: 0,
-                23: 1,
-                24: 1,
-                28: 1
-            }
-        },
-        4860000: {
-            hotfix1: true
-        },
-        8500050: {
+            vtPerBurn: 44, // can be updated in the future to modify incentives
+
+            // hf4
             maxKeys: 25,
             disallowVotingInactiveLeader: true,
             burnAccount: 'dtube.airdrop',
             preloadVt: 50, // 50% of vtPerBurn
             preloadBwGrowth: 2, // x2 more time of bwGrowth
             multisig: true,
-            leaders: 15
-        },
-        8595000: {
-            masterNoPreloadAcc: true
-        },
-        25000000: {
-            /*
+
+            // hf5
+            masterNoPreloadAcc: true,
+
+            // hf6
             accountAuthEnabled: true,
-            blockHashSerialization: 2,
             burnAccountIsBlackhole: true,
 
             // playlists
@@ -188,22 +159,12 @@ let config = {
             fundRequestReviewPeriodSeconds: 259200,
 
             // master dao
-            masterDao: true,
+            masterDao: false,
             masterDaoTxs: [0,4,5,6,10,11,13,14,15,17,19,20,21,23,24,25,26,27,28,29,30,32],
             masterDaoTxExp: 259200000,
 
             // maximum tx expiration allowed (block ts + 1 hour)
-            txExpirationMax: 3600000,
-
-            // update tx type restrictions
-            txLimits: {
-                14: 2,
-                15: 2,
-                23: 0,
-                24: 0,
-                28: 0
-            }
-            */
+            txExpirationMax: 3600000
         }
     },
     read: (blockNum) => {

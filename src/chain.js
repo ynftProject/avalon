@@ -257,7 +257,6 @@ let chain = {
 
         // update the config if an update was scheduled
         config = require('./config.js').read(block._id)
-        chain.applyHardforkPostBlock(block._id)
         eco.appendHistory(block)
         eco.nextBlock()
         dao.nextBlock()
@@ -604,7 +603,7 @@ let chain = {
                     })
                 i++
             })
-        executions.push((callback) => chain.applyHardfork(block,callback))
+        // executions.push((callback) => chain.applyHardfork(block,callback))
         
         let blockTimeBefore = new Date().getTime()
         series(executions, async function(err, results) {
@@ -624,9 +623,6 @@ let chain = {
                     burnedInBlock += results[i].burned
             }
 
-            // execute periodic burn
-            let additionalBurn = await chain.decayBurnAccount(block)
-
             // execute dao triggers
             let daoBurn = await dao.runTriggers(block.timestamp)
 
@@ -634,7 +630,6 @@ let chain = {
             chain.leaderRewards(block.miner, block.timestamp, function(dist) {
                 distributedInBlock += dist
                 distributedInBlock = Math.round(distributedInBlock*1000) / 1000
-                burnedInBlock += additionalBurn
                 burnedInBlock += daoBurn
                 burnedInBlock = Math.round(burnedInBlock*1000) / 1000
                 cb(executedSuccesfully, distributedInBlock, burnedInBlock)
@@ -698,84 +693,30 @@ let chain = {
         // rewards leaders with 'free' voting power in the network
         cache.findOne('accounts', {name: name}, function(err, account) {
             let newBalance = account.balance + config.leaderReward
-            let newVt = new GrowInt(account.vt, {growth:account.balance/(config.vtGrowth)}).grow(ts)
-            if (!newVt) 
-                logr.debug('error growing grow int', account, ts)
-            
-            if (config.leaderRewardVT) {
-                newVt.v += config.leaderRewardVT
-                account.vt = newVt
-            }
-
-            if (config.leaderReward > 0 || config.leaderRewardVT > 0)
+            if (config.leaderReward > 0)
                 cache.updateOne('accounts', 
                     {name: account.name},
-                    {$set: {
-                        vt: newVt,
-                        balance: newBalance
-                    }},
-                    function(err) {
-                        if (err) throw err
-                        if (config.leaderReward > 0)
-                            transaction.updateGrowInts(account, ts, function() {
-                                transaction.adjustNodeAppr(account, config.leaderReward, function() {
-                                    cb(config.leaderReward)
-                                })
-                            })
-                        else
-                            cb(0)
-                    }
-                )
+                    {$set: { balance: newBalance}},
+                function(err) {
+                    if (err) throw err
+                    transaction.updateGrowInts(account, ts, function() {
+                        transaction.adjustNodeAppr(account, config.leaderReward, function() {
+                            cb(config.leaderReward)
+                        })
+                    })
+                })
             else cb(0)
         })
     },
-    decayBurnAccount: (block) => {
-        return new Promise((rs) => {
-            if (!config.burnAccount || config.burnAccountIsBlackhole || block._id % config.ecoBlocks !== 0)
-                return rs(0)
-            // offset inflation
-            let rp = eco.rewardPool()
-            let burnAmount = Math.floor(rp.dist)
-            if (burnAmount <= 0)
-                return rs(0)
-            cache.findOne('accounts', {name: config.burnAccount}, (e,burnAccount) => {
-                // do nothing if there is none to burn
-                if (burnAccount.balance <= 0)
-                    return rs(0)
-                // burn only up to available balance
-                burnAmount = Math.min(burnAmount,burnAccount.balance)
-                cache.updateOne('accounts', {name: config.burnAccount}, {$inc: {balance: -burnAmount}},() =>
-                    transaction.updateGrowInts(burnAccount, block.timestamp, () => {
-                        transaction.adjustNodeAppr(burnAccount, -burnAmount, () => {
-                            logr.econ('Burned ' + burnAmount + ' periodically from ' + config.burnAccount)
-                            return rs(burnAmount)
-                        })
-                    })
-                )
-            })
-        })
-    },
     calculateHashForBlock: (block,deleteExisting) => {
-        if (config.blockHashSerialization === 1)
-            return chain.calculateHashV1(block._id, block.phash, block.timestamp, block.txs, block.miner, block.missedBy, block.dist, block.burn)
-        else if (config.blockHashSerialization === 2) {
-            let clonedBlock
-            if (deleteExisting) {
-                clonedBlock = cloneDeep(block)
-                delete clonedBlock.hash
-                delete clonedBlock.signature
-            }
-            return CryptoJS.SHA256(JSON.stringify(deleteExisting ? clonedBlock : block)).toString()
+        let clonedBlock
+        if (deleteExisting) {
+            clonedBlock = cloneDeep(block)
+            delete clonedBlock.hash
+            delete clonedBlock.signature
         }
-    },
-    calculateHashV1: (index, phash, timestamp, txs, miner, missedBy, distributed, burned) => {
-        let string = index + phash + timestamp + txs + miner
-        if (missedBy) string += missedBy
-        if (distributed) string += distributed
-        if (burned) string += burned
-
-        return CryptoJS.SHA256(string).toString()
-    },    
+        return CryptoJS.SHA256(JSON.stringify(deleteExisting ? clonedBlock : block)).toString()
+    },   
     getLatestBlock: () => {
         return chain.recentBlocks[chain.recentBlocks.length-1]
     },    
@@ -808,6 +749,7 @@ let chain = {
         // Do something on hardfork block after tx executions and before leader rewards distribution
         // As this is not a real transaction, no actual transaction is considered executed here
         // NOTE: Update block height to actual HF block activation
+        /*
         if (block._id === 25000000)
             // Clear @dtube.airdrop account
             cache.findOne('accounts', {name: config.burnAccount}, (e,burnAccount) => {
@@ -820,13 +762,8 @@ let chain = {
                         vt: { v: 0, t: block.timestamp }
                     }}, () => cb(null, { executed: false, distributed: 0, burned: burned }))
             })
-        else
+        else */
             cb(null, { executed: false, distributed: 0, burned: 0 })
-    },
-    applyHardforkPostBlock: (blockNum) => {
-        // Do something after executing hardfork block
-        if (blockNum === 4860000)
-            eco.loadHistory() // reset previous votes
     },
     batchLoadBlocks: (blockNum,cb) => {
         if (chain.blocksToRebuild.length === 0)
@@ -885,7 +822,6 @@ let chain = {
                 
                 // update the config if an update was scheduled
                 config = require('./config.js').read(blockToRebuild._id)
-                chain.applyHardforkPostBlock(blockToRebuild._id)
                 dao.nextBlock()
                 daoMaster.nextBlock()
                 eco.nextBlock()

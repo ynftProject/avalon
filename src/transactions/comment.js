@@ -1,6 +1,6 @@
 module.exports = {
     bsonValidate: true,
-    fields: ['link', 'pa', 'pp', 'json', 'vt', 'tag'],
+    fields: ['link', 'pa', 'pp', 'json'],
     validate: (tx, ts, legitUser, cb) => {
         // permlink
         if (!validate.string(tx.data.link, config.accountMaxLength, config.accountMinLength)) {
@@ -18,20 +18,6 @@ module.exports = {
         if (!validate.json(tx.data.json, config.jsonMaxBytes)) {
             cb(false, 'invalid tx data.json'); return
         }
-        // users need to vote the content at the same time with vt and tag field
-        if (!validate.integer(tx.data.vt, false, true)) {
-            cb(false, 'VP must be a non-zero integer'); return
-        }
-        if (!validate.string(tx.data.tag, config.tagMaxLength)) {
-            cb(false, 'invalid tx data.tag'); return
-        }
-        if (tx.data.tag.indexOf('.') > -1 || tx.data.tag.indexOf('$') > -1) {
-            cb(false, 'tag must not contain \'.\' or \'$\' characters'); return
-        }
-        let vpCheck = transaction.notEnoughVP(tx.data.vt, ts, legitUser)
-        if (vpCheck.needs)
-            return cb(false, 'not enough VP, attempting to spend '+tx.data.vt+' VP but only has '+vpCheck.has+' VP')
-
         if (tx.data.pa && tx.data.pp) 
             // its a comment of another comment
             cache.findOne('contents', {_id: tx.data.pa+'/'+tx.data.pp}, function(err, content) {
@@ -69,14 +55,7 @@ module.exports = {
             else if (content)
                 // existing content being edited but node running without CONTENT module
                 cb(true)
-            else {
-                // new content
-                let vote = {
-                    u: tx.sender,
-                    ts: ts,
-                    vt: tx.data.vt
-                }
-                
+            else {                
                 let newContent = {
                     _id: tx.sender+'/'+tx.data.link,
                     author: tx.sender,
@@ -85,29 +64,13 @@ module.exports = {
                     pp: tx.data.pp,
                     json: process.env.CONTENTS === '1' ? tx.data.json : {},
                     child: [],
-                    votes: [vote],
+                    votes: [],
                     ts: ts
                 }
-                if (tx.data.tag && process.env.CONTENTS === '1')  {
-                    vote.tag = tx.data.tag
-                    newContent.tags = {}
-                    newContent.tags[tx.data.tag] = Math.abs(vote.vt)
-                }
                 cache.insertOne('contents', newContent, function(){
-                    // monetary distribution (curation rewards)
-                    eco.curation(tx.sender, tx.data.link, function(distCurators, distMaster) {
-                        if (tx.data.pa && tx.data.pp && process.env.CONTENTS === '1') 
-                            cache.updateOne('contents', {_id: tx.data.pa+'/'+tx.data.pp}, { $push: {
-                                child: [tx.sender, tx.data.link]
-                            }}, function() {
-                                cb(true, distCurators+distMaster, tx.data.burn)
-                            })
-                        else {
-                            // and report how much was burnt
-                            cb(true, distCurators+distMaster, tx.data.burn)
-                            if (!tx.data.pa || !tx.data.pp) rankings.new(newContent)
-                        }
-                    })                    
+                    cb(true)
+                    if (!tx.data.pa || !tx.data.pp)
+                        rankings.new(newContent)               
                 })
             }
         })

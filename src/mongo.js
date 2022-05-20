@@ -65,6 +65,7 @@ let mongo = {
             // if no genesis file, we create only the master account and empty block 0
             await mongo.insertMasterAccount()
             await mongo.insertBlockZero()
+            await mongo.mintGenesisNFTs()
             return
         }
         
@@ -129,6 +130,26 @@ let mongo = {
         if (process.env.BLOCKS_DIR) return
         logr.info('Inserting Block #0 with hash '+config.originHash)
         await db.collection('blocks').insertOne(chain.getGenesisBlock())
+    },
+    mintGenesisNFTs: async () => {
+        logr.info('Minting genesis NFTs')
+        for (let n = 0; n < config.nftGenesis; n++)
+            await db.collection('contents').insertOne({
+                _id: config.masterName+'/'+n,
+                author: config.masterName,
+                link: n.toString(),
+                owner: config.masterName,
+                pa: '',
+                pp: '',
+                json: {},
+                child: [],
+                votes: [],
+                ask: {
+                    price: config.nftGenesisStartPrice,
+                    exp: Infinity
+                },
+                ts: 0
+            })
     },
     addMongoIndexes: async () => {
         await db.collection('accounts').createIndex({name:1})

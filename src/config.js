@@ -174,7 +174,11 @@ let config = {
             // max order expiration (30 days)
             nftMaxExpSeconds: 2592000,
             // max bids per account
-            nftMaxBids: 1000
+            nftMaxBids: 1000,
+
+            // genesis nft issued by master account
+            nftGenesis: 500,
+            nftGenesisStartPrice: 100
         }
     },
     read: (blockNum) => {

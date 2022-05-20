@@ -115,6 +115,8 @@ let mongo = {
             follows: [],
             followers: [],
             keys: [],
+            nftBids: {},
+            verified: true,
             created: {
                 by: '',
                 ts: config.block0ts

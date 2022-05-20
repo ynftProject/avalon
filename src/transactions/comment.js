@@ -60,11 +60,13 @@ module.exports = {
                     _id: tx.sender+'/'+tx.data.link,
                     author: tx.sender,
                     link: tx.data.link,
+                    owner: tx.sender,
                     pa: tx.data.pa,
                     pp: tx.data.pp,
                     json: process.env.CONTENTS === '1' ? tx.data.json : {},
                     child: [],
                     votes: [],
+                    ask: {},
                     ts: ts
                 }
                 cache.insertOne('contents', newContent, function(){

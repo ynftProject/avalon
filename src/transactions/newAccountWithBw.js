@@ -26,12 +26,8 @@ module.exports = {
         let newAccBw = {v:tx.data.bw,t:ts}
         let newAccVt = {v:0,t:0}
         let baseBwGrowth = 0
-        if (!config.masterNoPreloadAcc || tx.sender !== config.masterName || config.masterPaysForUsernames) {
-            if (config.preloadVt)
-                newAccVt = {v:eco.accountPrice(tx.data.name)*config.vtPerBurn*config.preloadVt/100,t:ts}
-            if (config.preloadBwGrowth)
-                baseBwGrowth = Math.floor(eco.accountPrice(tx.data.name)/config.preloadBwGrowth)
-        }
+        if (config.preloadBwGrowth && (!config.masterNoPreloadAcc || tx.sender !== config.masterName || config.masterPaysForUsernames))
+            baseBwGrowth = Math.floor(eco.accountPrice(tx.data.name)/config.preloadBwGrowth)
         cache.insertOne('accounts', {
             name: tx.data.name.toLowerCase(),
             pub: tx.data.pub,
@@ -42,6 +38,8 @@ module.exports = {
             follows: [],
             followers: [],
             keys: [],
+            nftBids: {},
+            verified: false,
             created: {
                 by: tx.sender,
                 ts: ts

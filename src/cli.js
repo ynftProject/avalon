@@ -397,7 +397,7 @@ program.command('nft-cancel-order <author> <link>')
         writeLine('  $ nft-cancel-order david anotherjpeg -F key.json -M larry')
     })
 
-program.command('nft-match-order <author> <link>')
+program.command('nft-match-order <author> <link> <target> <price>')
     .description('market trade an NFT')
     .action(function(author, link, target, price) {
         verifyAndSendTx('nftMatchOrder', author, link, target, price)

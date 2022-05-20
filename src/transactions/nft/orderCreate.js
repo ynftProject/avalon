@@ -9,7 +9,7 @@ module.exports = {
             return cb(false, 'invalid link')
         if (!validate.integer(tx.data.price, false, false, Number.MAX_SAFE_INTEGER, config.nftFloorPrice))
             return cb(false, 'nft order price must be an integer greater than '+config.nftFloorPrice)
-        if (!validate.integer(tx.data.price, false, false, ts+(config.nftMaxExpSeconds*1000), ts))
+        if (!validate.integer(tx.data.exp, false, false, ts+(config.nftMaxExpSeconds*1000), ts))
             return cb(false, 'invalid order expiration')
 
         let nft = await cache.findOnePromise('contents',{ _id: tx.data.author+'/'+tx.data.link })

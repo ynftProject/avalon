@@ -26,7 +26,7 @@ module.exports = {
                 return cb(false, 'actual nft ask price is above expected price')
             else if (nft.ask.exp <= ts)
                 return cb(false, 'order already expired')
-            let buyer = await cache.findOnePromise('accounts',{ name: tx.data.sender })
+            let buyer = await cache.findOnePromise('accounts',{ name: tx.sender })
             if (dao.availableBalance(buyer,ts) < nft.ask.price)
                 return cb(false, 'insufficient balance')
         } else {
@@ -75,8 +75,8 @@ module.exports = {
         await transaction.updateIntsAndNodeApprPromise(seller,ts,sellerProceeds)
 
         // nft sale fee
-        let feeAccount = await cache.findOnePromise('accounts',{ name: config.masterAccount })
-        await cache.updateOnePromise('accounts',{ name: config.masterAccount },{ $inc: { balance: fee }})
+        let feeAccount = await cache.findOnePromise('accounts',{ name: config.masterName })
+        await cache.updateOnePromise('accounts',{ name: config.masterName },{ $inc: { balance: fee }})
         await transaction.updateIntsAndNodeApprPromise(feeAccount,ts,fee)
 
         // remove nft ask orders

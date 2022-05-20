@@ -1,6 +1,6 @@
 let dao = {
     availableBalance: (account,ts) => {
-        if (!account.voteLock && Object.keys(account.nftBids) === 0)
+        if (!account.voteLock && Object.keys(account.nftBids).length === 0)
             return account.balance
         let newLock = 0
         let newOrderTotal = 0

@@ -107,6 +107,7 @@ let mongo = {
             pub: config.masterPub,
             pub_leader: config.masterPubLeader || config.masterPub,
             balance: config.masterBalance,
+            voteLock: 0,
             bw: {v:0,t:config.block0ts},
             vt: {v:0,t:config.block0ts},
             // we set those arbitrarily
@@ -115,6 +116,7 @@ let mongo = {
             follows: [],
             followers: [],
             keys: [],
+            proposalVotes: [],
             nftBids: {},
             verified: true,
             created: {

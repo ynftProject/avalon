@@ -10,6 +10,7 @@ let cache = {
         proposals: {},
         playlists: {},
         masterdao: {},
+        nftOwnership: {},
         state: {}
     },
     accounts: {},
@@ -18,6 +19,7 @@ let cache = {
     proposals: {},
     playlists: {},
     masterdao: {},
+    nftOwnership: {},
     state: {},
     changes: [],
     inserts: [],
@@ -182,6 +184,9 @@ let cache = {
         parallel(executions, function(err, results) {
             cb(err, results)
         })
+    },
+    insertOnePromise: function (collection, document) {
+        return new Promise((rs) => cache.insertOne(collection,document,() => rs(true)))
     },
     insertOne: function(collection, document, cb) {
         let key = cache.keyByCollection(collection)

@@ -59,13 +59,11 @@ let cmds = {
         return sign(privKey, sender, tx)
     },
 
-    comment: (privKey, sender, uri, pa, pp, content, weight, tag) => {
+    comment: (privKey, sender, uri, pa, pp, content) => {
         let tx = '{"type":4,"data":{"link":"'+
 			uri+'", "pa":"'+
 			pa+'", "pp":"'+
-			pp+'", "vt":'+
-			parseInt(weight)+', "tag":"'+
-			tag+'","json":'+content+'}}'
+			pp+'","json":'+content+'}}'
         return sign(privKey, sender, tx)
     },
 
@@ -94,41 +92,24 @@ let cmds = {
     },
 	
     newKey: (privKey, sender, id, pub, types) => {
-        let tx = '{"type":10,"data":{"id":"'+
+        let tx = '{"type":9,"data":{"id":"'+
 			id+'","pub":"'+
 			pub+'","types":'+types+'}}'
         return sign(privKey, sender, tx)
     },
 	
     removeKey: (privKey, sender, id) => {
-        let tx = '{"type":11,"data":{"id":"'+id+'"}}'
+        let tx = '{"type":10,"data":{"id":"'+id+'"}}'
         return sign(privKey, sender, tx)
     },
 	
     changePassword: (privKey, sender, pub) => {
-        let tx = '{"type":12,"data":{"pub":"'+pub+'"}}'
+        let tx = '{"type":11,"data":{"pub":"'+pub+'"}}'
         return sign(privKey, sender, tx)
     },
 	
-    promotedComment: (privKey, sender, uri, pa, pp, content, weight, tag, burn) => {
-        let tx = '{"type":13,"data":{"link":"'+
-			uri+'", "pa":"'+
-			pa+'", "pp":"'+
-			pp+'", "vt":'+
-			parseInt(weight)+', "tag":"'+
-			tag+'","burn":'+burn+',"json":'+content+'}}'
-        return sign(privKey, sender, tx)
-    },
-
-    transferVt: (privKey, sender, receiver, amount) => {
-        let tx = '{"type":14,"data":{"receiver":"'+
-			receiver+'", "amount":'+
-			parseInt(amount)+'}}'
-        return sign(privKey, sender, tx)
-    },
-
     transferBw: (privKey, sender, receiver, amount) => {
-        let tx = '{"type":15,"data":{"receiver":"'+
+        let tx = '{"type":12,"data":{"receiver":"'+
 			receiver+'", "amount":'+
 			parseInt(amount)+'}}'
         return sign(privKey, sender, tx)
@@ -137,30 +118,37 @@ let cmds = {
     limitVt: (privKey, sender, amount) => {
         amount = parseInt(amount)
         if (amount === -1) amount = null
-        let tx = '{"type":16,"data":{"amount":'+
+        let tx = '{"type":13,"data":{"amount":'+
 			amount+'}}'
         return sign(privKey, sender, tx)
     },
 
-    claimReward: (privKey, sender, author, link) => {
-        let tx = '{"type":17,"data":{"author":"'+
-			author+'", "link": "'+link+'"}}'
-        return sign(privKey, sender, tx)
-    },
-
     enableNode: (privKey, sender, pub) => {
-        let tx = '{"type":18,"data":{"pub":"'+
+        let tx = '{"type":14,"data":{"pub":"'+
 			pub+'"}}'
         return sign(privKey, sender, tx)
     },
 
-    tippedVote: (privkey, sender, link, author, weight, tag, tip) => {
-        if (!tag) tag = ''
-        let tx = '{"type":19,"data":{"link":"'+
-            link+'", "author":"'+
-            author+'", "vt": '+
-            parseInt(weight)+', "tag": "'+tag+'", "tip": ' + parseInt(tip) + '}}'
-        return sign(privkey, sender, tx)
+    transferNFT: (privKey, sender, author, link, receiver, memo) => {
+        if (!memo)
+            memo = ''
+        let tx = '{"type":15,"data":{"author":"'+author+'", "link":"'+link+'", "receiver": "'+receiver+'", "memo": "'+memo+'"}}'
+        return sign(privKey, sender, tx)
+    },
+
+    nftCreateOrder: (privKey, sender, author, link, price, exp) => {
+        let tx = '{"type":16,"data":{"author":"'+author+'", "link":"'+link+'", "price":'+price+', "exp":'+exp+'}}'
+        return sign(privKey, sender, tx)
+    },
+
+    nftCancelOrder: (privKey, sender, author, link) => {
+        let tx = '{"type":17,"data":{"author":"'+author+'", "link":"'+link+'"}}'
+        return sign(privKey, sender, tx)
+    },
+
+    nftMatchOrder: (privKey, sender, author, link, target, price) => {
+        let tx = '{"type":18,"data":{"author":"'+author+'", "link":"'+link+'", "target":"'+target+'", "price":'+price+'}}'
+        return sign(privKey, sender, tx)
     },
 
     newWeightedKey: (privKey, sender, id, pub, types, weight) => {

@@ -231,6 +231,12 @@ let transaction = {
                         activeProposalVotes.push(account.proposalVotes[v])
                     }
 
+            // update nft bids
+            let activeNftBids = {}
+            for (let b in account.nftBids)
+                if (account.nftBids[b].exp > ts)
+                    activeNftBids[b] = account.nftBids[b]
+
             // update all at the same time !
             let changes = {bw: bw}
             if (vt) changes.vt = vt
@@ -239,6 +245,8 @@ let transaction = {
                     changes.voteLock = newLock
                 if (account.proposalVotes.length !== activeProposalVotes.length)
                     changes.proposalVotes = activeProposalVotes
+                if (Object.keys(account.nftBids).length !== Object.keys(activeNftBids).length)
+                    changes.nftBids = activeNftBids
             }
             logr.trace('GrowInt Collect', account.name, changes)
             cache.updateOne('accounts', 

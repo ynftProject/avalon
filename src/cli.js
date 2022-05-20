@@ -109,10 +109,10 @@ program.command('claim <author> <link>')
         writeLine('  $ claim bob bobs-video -F key.json -M alice')
     })
 
-program.command('comment <link> <pa> <pp> <json> <vt> <tag>')
+program.command('comment <link> <pa> <pp> <json>')
     .description('publish a new JSON content')
-    .action(function(link, pa, pp, json, vt, tag) {
-        verifyAndSendTx('comment', link, pa, pp, json, vt, tag)
+    .action(function(link, pa, pp, json) {
+        verifyAndSendTx('comment', link, pa, pp, json)
     }).on('--help', function(){
         writeLine('')
         writeLine('Arguments:')
@@ -120,12 +120,10 @@ program.command('comment <link> <pa> <pp> <json> <vt> <tag>')
         writeLine('  <pa>: parent author (if you are replying to another comment)')
         writeLine('  <pp>: parent link (if you are replying to another comment)')
         writeLine('  <json>: a json object')
-        writeLine('  <vt>: the amount of VT to spend on the forced vote')
-        writeLine('  <tag>: the tag of the forced vote')
         writeLine('')
         writeLine('Examples:')
-        writeLine('  $ comment root-comment \'\' \'\' \'{"body": "Hello World"}\' 777 my-tag -F key.json -M alice')
-        writeLine('  $ comment reply-to-bob bobs-post bob \'{"body": "Hello Bob"}\' 1 my-tag -F key.json -M alice')
+        writeLine('  $ comment root-comment \'\' \'\' \'{"body": "Hello World"}\' -F key.json -M alice')
+        writeLine('  $ comment reply-to-bob bobs-post bob \'{"body": "Hello Bob"}\' -F key.json -M alice')
     })
 
 program.command('comment-edit <link> <json>')
@@ -367,6 +365,54 @@ program.command('new-weighted-key <id> <pub> <allowed_txs> <weight>')
         writeLine('  $ new-key finance wyPSnqfmAKoz5gAWyPcND7Rot6es2aFgcDGDTYB89b4q [3] 2 -F key.json -M alice')
     })
 
+program.command('nft-create-order <author> <link> <price> <exp>')
+    .alias('nft-neworder')
+    .description('create a new NFT order')
+    .action(function(author, link, price, exp) {
+        verifyAndSendTx('nftCreateOrder', author, link, price, exp)
+    }).on('--help', function(){
+        writeLine('')
+        writeLine('Arguments:')
+        writeLine('  <author>: the nft author')
+        writeLine('  <link>: the nft permlink')
+        writeLine('  <price>: bid price')
+        writeLine('  <exp>: order expiration timestamp')
+        writeLine('')
+        writeLine('Examples:')
+        writeLine('  $ nft-create-order alice nft1 20000 1653047510736 -F key.json -M alice')
+        writeLine('  $ nft-cneworder chris somejpeg 99900 1653242481985 -F key.json -M cat')
+    })
+
+program.command('nft-cancel-order <author> <link>')
+    .description('create a new NFT order')
+    .action(function(author, link) {
+        verifyAndSendTx('nftCancelOrder', author, link)
+    }).on('--help', function(){
+        writeLine('')
+        writeLine('Arguments:')
+        writeLine('  <author>: the nft author')
+        writeLine('  <link>: the nft permlink')
+        writeLine('')
+        writeLine('Examples:')
+        writeLine('  $ nft-cancel-order david anotherjpeg -F key.json -M larry')
+    })
+
+program.command('nft-match-order <author> <link>')
+    .description('market trade an NFT')
+    .action(function(author, link, target, price) {
+        verifyAndSendTx('nftMatchOrder', author, link, target, price)
+    }).on('--help', function(){
+        writeLine('')
+        writeLine('Arguments:')
+        writeLine('  <author>: the nft author')
+        writeLine('  <link>: the nft permlink')
+        writeLine('  <target>: the target order username to fill')
+        writeLine('  <price>: the minimum (for market sell) / maximum (for market buy) expected price for the NFT')
+        writeLine('')
+        writeLine('Examples:')
+        writeLine('  $ nft-match-order paul coolgif paul 7000 -F key.json -M natalie')
+    })
+
 program.command('password <pub>')
     .description('change your master key')
     .action(function(pub) {
@@ -559,23 +605,6 @@ program.command('sign <transaction>')
         writeLine('  $ sign \'{"type":1,"data":{"target":"bob"}}\' -F key.json -M alice')
     })
 
-program.command('tipped-vote <link> <author> <vt> <tag> <tip>')
-    .description('vote for a content with a % of curation rewards tipped to author')
-    .action(function(link, author, vt, tag, tip) {
-        verifyAndSendTx('tippedVote', link, author, vt, tag, tip)
-    }).on('--help', function(){
-        writeLine('')
-        writeLine('Arguments:')
-        writeLine('  <link>: the identifier of the comment to vote on')        
-        writeLine('  <author>: the author of the comment to vote on')
-        writeLine('  <vt>: the amount of VT to spend on the vote')
-        writeLine('  <tag>: the tag to associate with the vote')
-        writeLine('  <tip>: the tip weight (1 => 1%, 100 => 100% of rewards claimable by author)')
-        writeLine('')
-        writeLine('Examples:')
-        writeLine('  $ tipped-vote awesome-video alice 1000 introduce-yourself 15 -F key.json -M bob')
-    })
-
 program.command('transfer <receiver> <amount>')
     .alias('xfer')
     .option('--memo [text]', 'add a short message to the transfer')    
@@ -602,15 +631,19 @@ program.command('transfer-bw <receiver> <amount>')
         writeLine('  $ xfer-bw dan 777 -F key.json -M alice')
     })
 
-program.command('transfer-vp <receiver> <amount>')
-    .alias('xfer-vp')
-    .description('transfer voting power')
-    .action(function(receiver, amount) {
-        verifyAndSendTx('transferVt', receiver, amount)
+program.command('transfer-nft <author> <link> <receiver>')
+    .alias('xfer-nft')
+    .option('--memo [text]', 'add a short message to the transfer')    
+    .description('transfer NFT')
+    .action(function(author, link, receiver, options) {
+        let memo = ''
+        if (options && options.memo) memo = options.memo
+        verifyAndSendTx('transferNFT', author, link, receiver, memo)
     }).on('--help', function(){
         writeLine('')
         writeLine('Example:')
-        writeLine('  $ xfer-vp charlotte 777 -F key.json -M alice')
+        writeLine('  $ transfer-nft alice nft-1 john -F key.json -M bob')
+        writeLine('  $ transfer-nft bob nft-2 daniel --memo "thank you" -F key.json -M alice')
     })
 
 program.command('unfollow <target>')

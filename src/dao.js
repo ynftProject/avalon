@@ -1,12 +1,16 @@
 let dao = {
     availableBalance: (account,ts) => {
-        if (!account.voteLock)
+        if (!account.voteLock && Object.keys(account.nftBids) === 0)
             return account.balance
         let newLock = 0
+        let newOrderTotal = 0
         for (let v in account.proposalVotes)
             if (account.proposalVotes[v].end > ts && account.proposalVotes[v].amount - account.proposalVotes[v].bonus > newLock)
                 newLock = account.proposalVotes[v].amount - account.proposalVotes[v].bonus
-        return account.balance - newLock
+        for (let b in account.nftBids)
+            if (account.nftBids[b].exp > ts)
+                newOrderTotal += account.nftBids[b].price
+        return account.balance - newLock - newOrderTotal
     },
     fundRequestCreationFee: (requestedFund = 1) => {
         let baseFee = config.fundRequestBaseFee

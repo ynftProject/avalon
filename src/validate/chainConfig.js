@@ -1,11 +1,14 @@
 const int = require('./integer')
 const float = require('./float')
+const array = require('./array')
 
 let types = {
     posInt: (val) => int(val,true,false),
     posNonZeroInt: (val) => int(val,false,false),
     posFloat: (val) => float(val,true,false),
-    posNonZeroFloat: (val) => float(val,false,false)
+    posNonZeroFloat: (val) => float(val,false,false),
+    daoMembersArray: (val) => array(val,config.daoMembersMax),
+    posBasisPoints: (val) => int(val,true,false,10000,0)
 }
 
 // proposals to update any of these must be specified along with the other fields in the same group
@@ -47,6 +50,8 @@ let parameters = {
     preloadVt: types.posInt,
     preloadBwGrowth: types.posFloat,
 
+    daoMembers: types.daoMembersArray,
+    daoMembersMax: types.posInt,
     daoVotingPeriodSeconds: types.posNonZeroInt,
     daoVotingThreshold: types.posNonZeroInt,
     chainUpdateFee: types.posNonZeroInt,
@@ -59,7 +64,12 @@ let parameters = {
     fundRequestContribPeriodSeconds: types.posNonZeroInt,
     fundRequestDeadlineSeconds: types.posNonZeroInt,
     fundRequestDeadlineExtSeconds: types.posNonZeroInt,
-    fundRequestReviewPeriodSeconds: types.posNonZeroInt
+    fundRequestReviewPeriodSeconds: types.posNonZeroInt,
+
+    nftSaleFee: types.posBasisPoints,
+    nftFloorPrice: types.posNonZeroInt,
+    nftMaxExpSeconds: types.posNonZeroInt,
+    nftMaxBids: types.posNonZeroInt
 }
 
 module.exports = {

@@ -143,6 +143,7 @@ let config = {
             daoEnabled: true,
             daoLeaderSnapshotBlocks: 30,
             daoMembers: [],
+            daoMembersMax: 100,
             daoVotingPeriodSeconds: 604800,
             daoVotingThreshold: 50000000,
             daoVotingLeaderBonus: 1000000,

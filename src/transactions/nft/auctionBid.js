@@ -20,7 +20,7 @@ module.exports = {
             return cb(false, 'there is no auction running for this nft')
         else if (nft.ask.auction.price && tx.data.price <= nft.ask.auction.price)
             return cb(false, 'bid price is below current highest bid of '+nft.ask.auction.price)
-        else if (!nft.ask.auction.price && tx.data.price <= nft.ask.price)
+        else if (!nft.ask.auction.price && tx.data.price < nft.ask.price)
             return cb(false, 'cannot bid below minimum bid price')
 
         let bidder = await cache.findOnePromise('accounts',{ name: tx.sender })

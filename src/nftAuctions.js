@@ -24,7 +24,7 @@ let nft = {
                 currentTriggers[n] = nft.activeAuctions[n]
         for (let n in currentTriggers) {
             let nftTrigger = await cache.findOnePromise('contents',{ _id: n })
-            logr.info('NFT auction trigger',nftTrigger)
+            logr.trace('NFT auction trigger',nftTrigger)
             if (nftTrigger.ask.auction && nftTrigger.ask.auction.bidder)
                 await nft.executeAuction({
                     data: {

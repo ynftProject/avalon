@@ -119,7 +119,7 @@ let mongo = {
             keys: [],
             proposalVotes: [],
             nftBids: {},
-            verified: true,
+            verified: 2,
             created: {
                 by: '',
                 ts: config.block0ts

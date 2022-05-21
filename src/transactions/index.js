@@ -44,7 +44,9 @@ const transactions = [
     require('./dao/mdQueue.js'),
     require('./dao/mdSign.js'),
     require('./nft/auctionCreate.js'),
-    require('./nft/auctionBid.js')
+    require('./nft/auctionBid.js'),
+    require('./verifyRequest.js'),
+    require('./verifyResponse.js')
 ]
 
 module.exports = {
@@ -89,7 +91,9 @@ module.exports = {
         MD_QUEUE: 38,
         MD_SIGN: 39,
         NFT_AUCTION_CREATE: 40,
-        NFT_AUCTION_BID: 41
+        NFT_AUCTION_BID: 41,
+        VERIFY_REQUEST: 42,
+        VERIFY_RESPONSE: 43
     },
     validate: (tx, ts, legitUser, cb) => {
         // logr.debug('tx:'+tx.type+' validation begins')

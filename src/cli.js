@@ -743,6 +743,33 @@ program.command('vote-leader <leader>')
         writeLine('  $ vote-leader bob -F key.json -M alice')
     })
 
+program.command('verify-request <json>')
+    .description('submit an account verification request')
+    .action(function(json) {
+        verifyAndSendTx('verifyRequest', json)
+    }).on('--help', function(){
+        writeLine('')
+        writeLine('Arguments:')
+        writeLine('  <json>: verification data json')
+        writeLine('')
+        writeLine('Examples:')
+        writeLine('  $ verify-request \'{"foo":"bar"}\' -F key.json -M alice')
+    })
+
+program.command('verify-response <target> <approve>')
+    .description('submit an account verification request')
+    .action(function(target, approve) {
+        verifyAndSendTx('verifyResponse', target, approve)
+    }).on('--help', function(){
+        writeLine('')
+        writeLine('Arguments:')
+        writeLine('  <target>: target username to verify')
+        writeLine('  <approve>: verification level to vote for')
+        writeLine('')
+        writeLine('Examples:')
+        writeLine('  $ verify-response john 2 -F key.json -M alice')
+    })
+
 // error on unknown commands
 program.on('command:*', function () {
     writeLine('Unknown command: '+program.args[0])

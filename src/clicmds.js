@@ -261,6 +261,16 @@ let cmds = {
     nftBidAuction: (privKey, sender, author, link, price) => {
         let tx = '{"type":41,"data":{"author":"'+author+'", "link":"'+link+'", "price":'+price+'}}'
         return sign(privKey, sender, tx)
+    },
+
+    verifyRequest: (privKey, sender, json) => {
+        let tx = '{"type":42,"data":{"json":'+json+'}}'
+        return sign(privKey, sender, tx)
+    },
+
+    verifyResponse: (privKey, sender, target, approve) => {
+        let tx = '{"type":43,"data":{"target":"'+target+'", "approve":'+approve+'}}'
+        return sign(privKey, sender, tx)
     }
 }
 

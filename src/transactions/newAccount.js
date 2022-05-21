@@ -59,7 +59,7 @@ module.exports = {
             keys: [],
             proposalVotes: [],
             nftBids: {},
-            verified: false,
+            verified: 0,
             created: {
                 by: tx.sender,
                 ts: ts

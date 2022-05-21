@@ -13,6 +13,7 @@ leaderStats = require('./leaderStats')
 
 const dao = require('./dao')
 const daoMaster = require('./daoMaster')
+const nft = require('./nftAuctions')
 const blocks = require('./blocks')
 const mongo = require('./mongo')
 const http = require('./http')
@@ -56,6 +57,7 @@ mongo.init(async function(state) {
     await dao.loadActiveChainUpdateProposals()
     await dao.loadGovConfig()
     await daoMaster.loadID()
+    await nft.loadActiveAuctions()
 
     // Rebuild chain state if specified
     let rebuildResumeBlock = state && state.headBlock ? state.headBlock+1 : 0

@@ -8,7 +8,7 @@ let dao = {
             if (account.proposalVotes[v].end > ts && account.proposalVotes[v].amount - account.proposalVotes[v].bonus > newLock)
                 newLock = account.proposalVotes[v].amount - account.proposalVotes[v].bonus
         for (let b in account.nftBids)
-            if (account.nftBids[b].exp > ts)
+            if (account.nftBids[b].exp > ts && !account.nftBids[b].auction)
                 newOrderTotal += account.nftBids[b].price
         return account.balance - newLock - newOrderTotal
     },

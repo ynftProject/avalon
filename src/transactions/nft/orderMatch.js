@@ -1,4 +1,5 @@
 const dao = require('../../dao')
+const nftAuctions = require('../../nftAuctions')
 
 module.exports = {
     fields: ['author','link','target','price'],
@@ -51,6 +52,8 @@ module.exports = {
         if (tx.sender !== nft.owner) {
             // market buy
             price = nft.ask.price
+            if (nft.ask.auction && nft.ask.auction.price)
+                price = nft.ask.auction.price
             fee = Math.ceil(price*config.nftSaleFee/10000)
             sellerProceeds = price - fee
             buyerName = tx.sender
@@ -79,7 +82,12 @@ module.exports = {
         await cache.updateOnePromise('accounts',{ name: config.masterName },{ $inc: { balance: fee }})
         await transaction.updateIntsAndNodeApprPromise(feeAccount,ts,fee)
 
-        // remove nft ask orders
+        // remove nft ask orders and auctions
+        if (nft.ask && nft.ask.auction) {
+            nftAuctions.removeTrigger(tx.data.author,tx.data.link)
+            if (nft.ask.auction.bidder)
+                nftAuctions.cancelBid(tx.data.author,tx.data.link,nft.ask.auction)
+        }
         await cache.updateOnePromise('contents',{ _id: tx.data.author+'/'+tx.data.link },{ $set: { ask: {} }})
 
         // transfer nft

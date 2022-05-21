@@ -234,7 +234,7 @@ let transaction = {
             // update nft bids
             let activeNftBids = {}
             for (let b in account.nftBids)
-                if (account.nftBids[b].exp > ts)
+                if (account.nftBids[b].exp > ts && !account.nftBids[b].auction)
                     activeNftBids[b] = account.nftBids[b]
 
             // update all at the same time !

@@ -251,6 +251,16 @@ let cmds = {
     mdSign: (privKey, sender, id) => {
         let tx = '{"type":39,"data":{"id":'+id+'}}'
         return sign(privKey, sender, tx)
+    },
+
+    nftCreateAuction: (privKey, sender, author, link, price, end) => {
+        let tx = '{"type":40,"data":{"author":"'+author+'", "link":"'+link+'", "price":'+price+', "end":'+end+'}}'
+        return sign(privKey, sender, tx)
+    },
+
+    nftBidAuction: (privKey, sender, author, link, price) => {
+        let tx = '{"type":41,"data":{"author":"'+author+'", "link":"'+link+'", "price":'+price+'}}'
+        return sign(privKey, sender, tx)
     }
 }
 

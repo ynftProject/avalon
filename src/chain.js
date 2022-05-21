@@ -6,6 +6,7 @@ const series = require('run-series')
 const cloneDeep = require('clone-deep')
 const dao = require('./dao')
 const daoMaster = require('./daoMaster')
+const nftAuctions = require('./nftAuctions')
 const transaction = require('./transaction.js')
 const notifications = require('./notifications.js')
 const txHistory = require('./txHistory')
@@ -127,6 +128,7 @@ let chain = {
                 cache.rollback()
                 dao.resetID()
                 daoMaster.resetID()
+                nftAuctions.reset()
                 // and only add the valid txs to the new block
                 newBlock.txs = validTxs
 
@@ -261,6 +263,7 @@ let chain = {
         eco.nextBlock()
         dao.nextBlock()
         daoMaster.nextBlock()
+        nftAuctions.nextBlock()
         leaderStats.processBlock(block)
         txHistory.processBlock(block)
 
@@ -441,6 +444,7 @@ let chain = {
             cache.rollback()
             dao.resetID()
             daoMaster.resetID()
+            nftAuctions.reset()
             if (validTxs.length !== newBlock.txs.length) {
                 logr.error('invalid block transaction')
                 cb(false); return
@@ -625,6 +629,7 @@ let chain = {
 
             // execute dao triggers
             let daoBurn = await dao.runTriggers(block.timestamp)
+            await nftAuctions.runTriggers(block.timestamp)
 
             // add rewards for the leader who mined this block
             chain.leaderRewards(block.miner, block.timestamp, function(dist) {
@@ -824,6 +829,7 @@ let chain = {
                 config = require('./config.js').read(blockToRebuild._id)
                 dao.nextBlock()
                 daoMaster.nextBlock()
+                nftAuctions.nextBlock()
                 eco.nextBlock()
                 eco.appendHistory(blockToRebuild)
                 chain.cleanMemory()

@@ -19,7 +19,10 @@ module.exports = {
             let bidder = await cache.findOnePromise('accounts',{ name: tx.sender })
             if (dao.availableBalance(bidder,ts) < tx.data.price)
                 return cb(false, 'insufficient balance to place nft bid order')
-        }
+            if (!bidder.nftBids[tx.data.author+'/'+tx.data.link] && Object.keys(bidder.nftBids).length >= config.nftMaxBids)
+                return cb(false, 'cannot bid more than '+config.nftMaxBids+' nfts at a time')
+        } else if (nft.ask && nft.ask.auction)
+            return cb(false, 'cannot create ask order with already active auction')
         cb(true)
     },
     execute: async (tx, ts, cb) => {

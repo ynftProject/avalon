@@ -118,7 +118,7 @@ let config = {
             // hf4
             maxKeys: 25,
             disallowVotingInactiveLeader: true,
-            burnAccount: 'dtube.airdrop',
+            burnAccount: 'null',
             preloadVt: 50, // 50% of vtPerBurn
             preloadBwGrowth: 2, // x2 more time of bwGrowth
             multisig: true,
@@ -128,7 +128,6 @@ let config = {
 
             // hf6
             accountAuthEnabled: true,
-            burnAccountIsBlackhole: true,
 
             // playlists
             playlistEnabled: true,

@@ -124,7 +124,30 @@ let mongo = {
                 by: '',
                 ts: config.block0ts
             }
-        }) 
+        })
+
+        logr.info('Inserting null account: '+config.burnAccount)
+        await db.collection('accounts').insertOne({
+            name: config.burnAccount,
+            pub: '',
+            balance: 0,
+            voteLock: 0,
+            bw: {v:0,t:0},
+            vt: {v:0,t:0},
+            // we set those arbitrarily
+            approves: [],
+            node_appr: 0,
+            follows: [],
+            followers: [],
+            keys: [],
+            proposalVotes: [],
+            nftBids: {},
+            verified: 1,
+            created: {
+                by: '',
+                ts: 0
+            }
+        })
     },
     insertBlockZero: async () => {
         if (process.env.BLOCKS_DIR) return

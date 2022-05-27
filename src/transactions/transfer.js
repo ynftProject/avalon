@@ -29,39 +29,25 @@ module.exports = {
             })
         })
     },
-    execute: (tx, ts, cb) => {
+    execute: async (tx, ts, cb) => {
         // remove funds from sender
-        cache.updateOne('accounts', 
+        await cache.updateOnePromise('accounts', 
             {name: tx.sender},
-            {$inc: {balance: -tx.data.amount}},
-            function() {
-                cache.findOne('accounts', {name: tx.sender}, function(err, accSender) {
-                    if (err) throw err
-                    // update his bandwidth
-                    accSender.balance += tx.data.amount
-                    transaction.updateGrowInts(accSender, ts, function() {
-                        transaction.adjustNodeAppr(accSender, -tx.data.amount, function() {
-                            if (tx.data.receiver === config.burnAccount)
-                                return cb(true,0,tx.data.amount)
-                            // add funds to receiver
-                            cache.updateOne('accounts', 
-                                {name: tx.data.receiver},
-                                {$inc: {balance: tx.data.amount}},
-                                function() {
-                                    cache.findOne('accounts', {name: tx.data.receiver}, function(err, accReceiver) {
-                                        if (err) throw err
-                                        // update his bandwidth
-                                        accReceiver.balance -= tx.data.amount
-                                        transaction.updateGrowInts(accReceiver, ts, function() {
-                                            transaction.adjustNodeAppr(accReceiver, tx.data.amount, function() {
-                                                cb(true)
-                                            })
-                                        })
-                                    })
-                                })
-                        })
-                    })
-                })
-            })
+            {$inc: {balance: -tx.data.amount}})
+        let accSender = await cache.findOnePromise('accounts', {name: tx.sender})
+        accSender.balance += tx.data.amount
+        await transaction.updateIntsAndNodeApprPromise(accSender, ts, -tx.data.amount)
+        if (tx.data.receiver === config.burnAccount)
+            return cb(true,0,tx.data.amount)
+
+        // add funds to receiver
+        await cache.updateOnePromise('accounts', 
+            {name: tx.data.receiver},
+            {$inc: {balance: tx.data.amount}})
+        let accReceiver = await cache.findOnePromise('accounts', {name: tx.data.receiver})
+        accReceiver.balance -= tx.data.amount
+        await transaction.updateIntsAndNodeApprPromise(accReceiver, ts, tx.data.amount)
+
+        cb(true)
     }
 }

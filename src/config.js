@@ -97,7 +97,9 @@ let config = {
                 12: 2
             },
             // the number of ms needed for 0.01 DTC to generate 1 vt
-            vtGrowth: 360000000, // +1 vt per hour per DTC (3600 * 1000 * 100)
+            vpGrowth: 360000000, // +1 vt per hour per DTC (3600 * 1000 * 100)
+            vpCapFactor: 10,
+            vpCapFloor: 1000000,
 
             // hf4
             maxKeys: 25,

@@ -268,7 +268,7 @@ program.command('limit-vt')
     }).on('--help', function(){
         writeLine('')
         writeLine('Arguments:')
-        writeLine('  <amount>: the new maximum VT. If -1, then the maxVt will be unset')
+        writeLine('  <amount>: the new maximum VT. If -1, then the maxVp will be unset')
         writeLine('')
         writeLine('Warning: Limit VT is only useful for corporate accounts that want to prove they will not be involved in content voting.')
         writeLine('')

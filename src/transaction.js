@@ -166,14 +166,19 @@ let transaction = {
             cb(err, res)
         })
     },
-    VP: (ts, legitUser) => {
+    VP: async (ts, legitUser) => {
         // checking if user has enough power for a transaction requiring voting power
+        let vpCap = await transaction.maxVP()
         let vtGrowConfig = {
-            growth: legitUser.balance / config.vtGrowth,
-            max: legitUser.maxVt
+            growth: legitUser.balance / config.vpGrowth,
+            max: Math.min(legitUser.maxVp || Number.MAX_SAFE_INTEGER,vpCap)
         }
         let vtBefore = new GrowInt(legitUser.vt, vtGrowConfig).grow(ts)
         return vtBefore.v
+    },
+    maxVP: async () => {
+        let avgs = await cache.findOnePromise('state',{ _id: 2 })
+        return Math.max(config.vpCapFloor, Number(BigInt(config.vpCapFactor)*BigInt(avgs.tvap.total)/BigInt(avgs.tvap.count)))
     },
     collectGrowInts: (tx, ts, cb) => {
         cache.findOne('accounts', {name: tx.sender}, async function(err, account) {
@@ -200,8 +205,8 @@ let transaction = {
             let oldVt = account.vt.v
             let vt = null
             let vtGrowConfig = {
-                growth: account.balance / config.vtGrowth,
-                max: account.maxVt
+                growth: account.balance / config.vpGrowth,
+                max: Math.min(account.maxVp || Number.MAX_SAFE_INTEGER, await transaction.maxVP())
             }
             vt = new GrowInt(account.vt, vtGrowConfig).grow(ts)
 
@@ -261,11 +266,12 @@ let transaction = {
         })
     },
     updateIntsAndNodeApprPromise: (account, ts, change) => {
-        return new Promise((rs) => {
-            transaction.updateGrowInts(account,ts,() => transaction.adjustNodeAppr(account,change,() => rs(true)))
+        return new Promise(async (rs) => {
+            await transaction.updateGrowInts(account,ts)
+            transaction.adjustNodeAppr(account,change,() => rs(true))
         })
     },
-    updateGrowInts: (account, ts, cb) => {
+    updateGrowInts: async (account, ts, cb) => {
         // updates the bandwidth and vote tokens when the balance changes (transfer, monetary distribution)
         // account.balance is the one before the change (!)
         if (!account.bw || !account.vt) 
@@ -276,26 +282,26 @@ let transaction = {
             max: config.bwMax
         }).grow(ts)
         let oldVt = account.vt.v
-        let vt = new GrowInt(account.vt, {growth:account.balance/(config.vtGrowth)}).grow(ts)
+        let vpCap = await transaction.maxVP()
+        let vt = new GrowInt(account.vt, {
+            growth:account.balance/(config.vpGrowth),
+            max: Math.min(account.maxVp || Number.MAX_SAFE_INTEGER, vpCap)
+        }).grow(ts)
         if (!bw || !vt) {
             logr.fatal('error growing grow int', account, ts)
             return
         }
         let vtChange = vt.v - oldVt
         logr.trace('GrowInt Update', account.name, bw, vt)
-        cache.updateOne('accounts', 
+        await cache.updateOnePromise('accounts', 
             {name: account.name},
             {$set: {
                 bw: bw,
                 vt: vt
-            }},
-            async function(err) {
-                if (err) throw err
-                let avgs = await cache.findOnePromise('state',{_id: 2})
-                avgs.tvap.total = (BigInt(avgs.tvap.total)+BigInt(vtChange)).toString()
-                await cache.updateOnePromise('state',{_id: 2},{$set:{tvap: avgs.tvap}})
-                cb(true)
-            })
+            }})
+        let avgs = await cache.findOnePromise('state',{_id: 2})
+        avgs.tvap.total = (BigInt(avgs.tvap.total)+BigInt(vtChange)).toString()
+        await cache.updateOnePromise('state',{_id: 2},{$set:{tvap: avgs.tvap}})
     },
     adjustNodeAppr: (acc, newCoins, cb) => {
         // updates the node_appr values for the node owners the account approves (when balance changes)

@@ -12,7 +12,7 @@ module.exports = {
         cache.updateOne('accounts', {
             name: tx.sender
         },{ $set: {
-            maxVt: amount
+            maxVp: amount
         }},function(){
             cb(true)
         })

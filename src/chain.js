@@ -645,13 +645,12 @@ let chain = {
             await nftAuctions.runTriggers(block.timestamp)
 
             // add rewards for the leader who mined this block
-            chain.leaderRewards(block.miner, block.timestamp, function(dist) {
-                distributedInBlock += dist
-                distributedInBlock = Math.round(distributedInBlock*1000) / 1000
-                burnedInBlock += daoBurn
-                burnedInBlock = Math.round(burnedInBlock*1000) / 1000
-                cb(executedSuccesfully, distributedInBlock, burnedInBlock, vpInBlock)
-            })
+            let leaderDist = await chain.leaderRewards(block.miner, block.timestamp)
+            distributedInBlock += leaderDist
+            distributedInBlock = Math.round(distributedInBlock*1000) / 1000
+            burnedInBlock += daoBurn
+            burnedInBlock = Math.round(burnedInBlock*1000) / 1000
+            cb(executedSuccesfully, distributedInBlock, burnedInBlock, vpInBlock)
         })
     },
     minerSchedule: (block) => {
@@ -707,24 +706,18 @@ let chain = {
         })
         return leaders.slice(start, limit)
     },
-    leaderRewards: (name, ts, cb) => {
+    leaderRewards: async (name, ts, cb) => {
         // rewards leaders with 'free' voting power in the network
-        cache.findOne('accounts', {name: name}, function(err, account) {
-            let newBalance = account.balance + config.leaderReward
-            if (config.leaderReward > 0)
-                cache.updateOne('accounts', 
-                    {name: account.name},
-                    {$set: { balance: newBalance}},
-                function(err) {
-                    if (err) throw err
-                    transaction.updateGrowInts(account, ts, function() {
-                        transaction.adjustNodeAppr(account, config.leaderReward, function() {
-                            cb(config.leaderReward)
-                        })
-                    })
-                })
-            else cb(0)
-        })
+        let account = await cache.findOnePromise('accounts', {name: name})
+        let newBalance = account.balance + config.leaderReward
+        if (config.leaderReward > 0) {
+            await cache.updateOnePromise('accounts', 
+                {name: account.name},
+                {$set: { balance: newBalance}})
+            await transaction.updateIntsAndNodeApprPromise(account, ts, config.leaderReward)
+            return config.leaderReward
+        } else
+            return 0
     },
     calculateHashForBlock: (block,deleteExisting) => {
         let clonedBlock

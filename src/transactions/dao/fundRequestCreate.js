@@ -66,8 +66,8 @@ module.exports = {
             cache.updateOne('accounts', {name: tx.sender}, {$inc: {balance: -fee}}, async () => {
                 let sender = await cache.findOnePromise('accounts', {name: tx.sender})
                 sender.balance += fee
-                transaction.updateGrowInts(sender, ts, () =>
-                    transaction.adjustNodeAppr(sender, -fee, () => cb(true)))
+                await transaction.updateIntsAndNodeApprPromise(sender, ts, -fee)
+                cb(true)
             })
         })
     }

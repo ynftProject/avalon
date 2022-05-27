@@ -59,6 +59,12 @@ module.exports = {
         }
         if (final !== user.verified)
             user.verifyData.lastTs = ts
+        let avgs = await cache.findOnePromise('state',{ _id: 2 })
+        if (!user.verified && final)
+            avgs.currentDistPool.accounts++
+        else if (user.verified && !final)
+            avgs.currentDistPool.accounts--
+        await cache.updateOnePromise('state',{ _id: 2 },{ $set: { currentDistPool: avgs.currentDistPool }})
         let change = {$set:{verifyData: user.verifyData, verified: parseInt(final)}}
         await cache.updateOnePromise('accounts',{ name: tx.data.target },change)
         cb(true)

@@ -98,13 +98,11 @@ let config = {
             },
             // the number of ms needed for 0.01 DTC to generate 1 vt
             vtGrowth: 360000000, // +1 vt per hour per DTC (3600 * 1000 * 100)
-            vtPerBurn: 44, // can be updated in the future to modify incentives
 
             // hf4
             maxKeys: 25,
             disallowVotingInactiveLeader: true,
             burnAccount: 'null',
-            preloadVt: 50, // 50% of vtPerBurn
             preloadBwGrowth: 2, // x2 more time of bwGrowth
             multisig: true,
 

@@ -92,7 +92,7 @@ program.command('chainupdate-create <title> <description> <url> <changes>')
         writeLine('  <changes>: array of 2-element key-value arrays of proposed parameter changes')
         writeLine('')
         writeLine('Examples:')
-        writeLine('  $ chainupdate-create \'An example chain update title\' \'Some description to describe it\' \'https://d.tube/#!/v/alice/chain-update-proposal\' [["vtPerBurn",100],["rewardPoolAmount",100000]] -F key.json -M alice')
+        writeLine('  $ chainupdate-create \'An example chain update title\' \'Some description to describe it\' \'https://d.tube/#!/v/alice/chain-update-proposal\' [["nftMaxBids",500],["rewardPoolAmount",100000]] -F key.json -M alice')
     })
 
 program.command('comment <link> <pa> <pp> <json>')

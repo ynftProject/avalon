@@ -110,6 +110,8 @@ let mongo = {
             pub_leader: config.masterPubLeader || config.masterPub,
             balance: config.masterBalance,
             voteLock: 0,
+            earningLock: 0,
+            earnings: 0,
             bw: {v:0,t:config.block0ts},
             vt: {v:0,t:config.block0ts},
             // we set those arbitrarily
@@ -133,9 +135,10 @@ let mongo = {
             pub: '',
             balance: 0,
             voteLock: 0,
+            earningLock: 0,
+            earnings: 0,
             bw: {v:0,t:0},
             vt: {v:0,t:0},
-            // we set those arbitrarily
             approves: [],
             node_appr: 0,
             follows: [],

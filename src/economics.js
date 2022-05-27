@@ -135,42 +135,65 @@ let eco = {
             fee: config.ecoMasterFee,
             authorReward: 0,
             voterReward: 0,
-            feeReward: 0
+            authorExceeding: 0,
+            voterExceeding: 0,
+            feeReward: 0,
         }
 
         if (!currentVote.dv) {
+            let earningLimit = await eco.earningLimit()
             let ownership = await cache.findOnePromise('nftOwnership',{_id:author+'/'+currentVote.u})
             if (ownership && ownership.count > 0 && ownership.since < content.ts) {
                 shares.author = config.ecoAuthorRewardOwning
                 shares.voter = config.ecoCurationRewardOwning,
                 shares.fee = config.ecoMasterFeeOwning
             }
+            logr.econ('Earning Limits',earningLimit)
             shares.authorReward = Math.floor(thNewCoins*shares.author/10000)
             shares.voterReward = Math.floor(thNewCoins*shares.voter/10000)
             shares.feeReward = Math.floor(thNewCoins*shares.fee/10000)
             if (shares.authorReward) {
                 let authorAcc = await cache.findOnePromise('accounts',{name: author})
-                await cache.updateOnePromise('accounts',{name: author},{$inc:{balance: shares.authorReward, earningLock: shares.authorReward, earnings: shares.authorReward}})
-                transaction.updateIntsAndNodeApprPromise(authorAcc,currentVote.ts,shares.authorReward)
+                logr.econ('Author earnings',authorAcc.earnings)
+                if (authorAcc.earnings+shares.authorReward > earningLimit.rpel)
+                    shares.authorReward = Math.max(0,earningLimit.rpel - authorAcc.earnings)
+                if (authorAcc.earnings+shares.authorReward > earningLimit.pel)
+                    shares.authorExceeding = Math.min(authorAcc.earnings+shares.authorReward-earningLimit.pel,shares.authorReward)
+                if (shares.authorReward) {
+                    await cache.updateOnePromise('accounts',{name: author},{$inc:{balance: shares.authorReward-shares.authorExceeding, earningLock: shares.authorReward-shares.authorExceeding, earnings: shares.authorReward}})
+                    await transaction.updateIntsAndNodeApprPromise(authorAcc,currentVote.ts,shares.authorReward-shares.authorExceeding)
+                }
             }
             if (shares.voterReward) {
                 let voterAcc = await cache.findOnePromise('accounts',{name: currentVote.u})
-                await cache.updateOnePromise('accounts',{name: currentVote.u},{$inc:{balance: shares.voterReward, earnings: shares.voterReward}})
-                transaction.updateIntsAndNodeApprPromise(voterAcc,currentVote.ts,shares.voterReward)
+                logr.econ('Voter earnings',voterAcc.earnings)
+                if (voterAcc.earnings+shares.voterReward > earningLimit.rpel)
+                    shares.voterReward = Math.max(0,earningLimit.rpel - voterAcc.earnings)
+                if (voterAcc.earnings+shares.voterReward > earningLimit.pel)
+                    shares.voterExceeding = Math.min(voterAcc.earnings+shares.voterReward-earningLimit.pel,shares.voterReward)
+                if (shares.voterReward) {
+                    await cache.updateOnePromise('accounts',{name: currentVote.u},{$inc:{balance: shares.voterReward-shares.voterExceeding, earnings: shares.voterReward}})
+                    await transaction.updateIntsAndNodeApprPromise(voterAcc,currentVote.ts,shares.voterReward-shares.voterExceeding)
+                }
             }
+            if (!shares.authorReward && !shares.voterReward)
+                shares.feeReward = 0
             if (shares.feeReward) {
                 let feeAcc = await cache.findOnePromise('accounts',{name: config.masterName})
                 await cache.updateOnePromise('accounts',{name: config.masterName},{$inc:{balance: shares.feeReward}})
-                transaction.updateIntsAndNodeApprPromise(feeAcc,currentVote.ts,shares.feeReward)
+                await transaction.updateIntsAndNodeApprPromise(feeAcc,currentVote.ts,shares.feeReward)
             }
-            if (shares.authorReward || shares.voterReward) {
+            if (shares.authorReward || shares.voterReward || shares.authorExceeding || shares.voterExceeding) {
                 let avgs = await cache.findOnePromise('state',{_id: 2})
                 avgs.earning.total = (BigInt(avgs.earning.total)+BigInt(shares.authorReward)+BigInt(shares.voterReward)).toString()
-                await cache.updateOnePromise('state',{_id: 2},{$set:{earning: avgs.earning}})
+                avgs.currentDistPool.total += shares.authorExceeding+shares.voterExceeding
+                await cache.updateOnePromise('state',{_id: 2},{$set:{earning: avgs.earning, currentDistPool: avgs.currentDistPool}})
             }
             currentVote.authorDist = shares.authorReward
             currentVote.voterDist = shares.voterReward
             currentVote.feeDist = shares.feeReward
+            if (shares.authorExceeding) currentVote.authorExceeding = shares.authorExceeding
+            if (shares.voterExceeding) currentVote.voterExceeding = shares.voterExceeding
             logr.econ('shares',shares)
         }
         let newCoins = shares.authorReward+shares.voterReward+shares.feeReward
@@ -226,6 +249,13 @@ let eco = {
         avgs.tvap.count++
         avgs.earning.count++
         await cache.updateOnePromise('state',{_id: 2},{$set:{tvap: avgs.tvap, earning: avgs.earning}})
+    },
+    earningLimit: async () => {
+        let avgs = await cache.findOnePromise('state',{_id: 2})
+        return {
+            pel: Math.max(config.earningLimitFloor, Math.floor(config.earningLimitFactorPEL*Number(BigInt(avgs.earning.total)/BigInt(avgs.earning.count)))),
+            rpel: Math.max(config.earningLimitFloor, Math.floor(config.earningLimitFactorRPEL*Number(BigInt(avgs.earning.total)/BigInt(avgs.earning.count)))),
+        }
     },
     round: (val = 0) => Math.round(val*Math.pow(10,config.ecoClaimPrecision))/Math.pow(10,config.ecoClaimPrecision),
     floor: (val = 0) => Math.floor(val*Math.pow(10,config.ecoClaimPrecision))/Math.pow(10,config.ecoClaimPrecision)

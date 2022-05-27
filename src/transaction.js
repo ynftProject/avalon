@@ -209,6 +209,7 @@ let transaction = {
                 max: Math.min(account.maxVp || Number.MAX_SAFE_INTEGER, await transaction.maxVP())
             }
             vt = new GrowInt(account.vt, vtGrowConfig).grow(ts)
+            vt.v = Math.max(vt.v,oldVt)
 
             switch (tx.type) {
             case TransactionType.TRANSFER:
@@ -291,6 +292,7 @@ let transaction = {
             logr.fatal('error growing grow int', account, ts)
             return
         }
+        vt.v = Math.max(vt.v,oldVt)
         let vtChange = vt.v - oldVt
         logr.trace('GrowInt Update', account.name, bw, vt)
         await cache.updateOnePromise('accounts', 

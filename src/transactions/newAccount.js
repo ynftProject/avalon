@@ -56,6 +56,8 @@ module.exports = {
             pub: tx.data.pub,
             balance: 0,
             voteLock: 0,
+            earningLock: 0,
+            earnings: 0,
             bw: newAccBw,
             vt: newAccVt,
             baseBwGrowth: baseBwGrowth,

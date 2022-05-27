@@ -20,6 +20,10 @@ let groups = {
     tse: {
         members: ['ecoAuthorRewardOwning','ecoCurationRewardOwning','ecoMasterFeeOwning'],
         validate: (v1,v2,v3) => v1+v2+v3 === 10000
+    },
+    earnLimit: {
+        members: ['earningLimitFactorPEL','earningLimitFactorRPEL'],
+        validate: (v1,v2) => v1 < v2
     }
 }
 
@@ -51,6 +55,9 @@ let parameters = {
     preloadBwGrowth: types.posFloat,
     vpCapFactor: types.posNonZeroFloat,
     vpCapFloor: types.posNonZeroInt,
+    earningLimitFactorPEL: types.posNonZeroFloat,
+    earningLimitFactorRPEL: types.posNonZeroFloat,
+    earningLimitFloor: types.posNonZeroInt,
 
     daoMembers: types.daoMembersArray,
     daoMembersMax: types.posInt,

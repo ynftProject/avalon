@@ -29,8 +29,9 @@ module.exports = {
             u: tx.sender,
             ts: ts,
             vt: vp,
-            dv: tx.data.downvote
         }
+        if (tx.data.downvote)
+            vote.vt = vote.vt * -1
         // monetary distribution (curation rewards)
         let dist = await eco.curation(tx.data.author, tx.data.link, vote)
         let content = await cache.findOnePromise('contents', {_id: tx.data.author+'/'+tx.data.link})

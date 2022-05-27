@@ -128,7 +128,7 @@ let eco = {
     },
     curation: async (author, link, currentVote) => {
         let content = await cache.findOnePromise('contents',{_id:author+'/'+link})
-        let thNewCoins = currentVote.dv ? 0 : eco.print(currentVote.vt)
+        let thNewCoins = currentVote.vt < 0 ? 0 : eco.print(currentVote.vt)
         let shares = {
             author: config.ecoAuthorReward,
             voter: config.ecoCurationReward,
@@ -140,7 +140,7 @@ let eco = {
             feeReward: 0,
         }
 
-        if (!currentVote.dv) {
+        if (currentVote.vt > 0) {
             let earningLimit = await eco.earningLimit()
             let ownership = await cache.findOnePromise('nftOwnership',{_id:author+'/'+currentVote.u})
             if (ownership && ownership.count > 0 && ownership.since < content.ts) {

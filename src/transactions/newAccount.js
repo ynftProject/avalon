@@ -1,14 +1,19 @@
 const dao = require('../dao')
+const GrowInt = require('growint')
 
 module.exports = {
-    fields: ['name', 'pub'],
-    validate: (tx, ts, legitUser, cb) => {
+    fields: ['name', 'pub', 'bw', 'ref'],
+    validate: async (tx, ts, legitUser, cb) => {
         if (!validate.string(tx.data.name, config.accountMaxLength, config.accountMinLength, config.allowedUsernameChars, config.allowedUsernameCharsOnlyMiddle)) {
             cb(false, 'invalid tx data.name'); return
         }
         if (!validate.publicKey(tx.data.pub, config.accountMaxLength)) {
             cb(false, 'invalid tx data.pub'); return
         }
+        if (!validate.integer(tx.data.bw,true,false))
+            return cb(false,'bw must be a valid non-negative integer')
+        if (!validate.string(tx.data.ref, config.accountMaxLength, 0, config.allowedUsernameChars, config.allowedUsernameCharsOnlyMiddle))
+            return cb(false, 'invalid referrer account name')
 
         let lowerUser = tx.data.name.toLowerCase()
 
@@ -24,28 +29,28 @@ module.exports = {
             
         }
 
-        cache.findOne('accounts', {name: lowerUser}, function(err, account) {
-            if (err) throw err
-            if (account)
-                cb(false, 'invalid tx data.name already exists')
-            else
-                cache.findOne('accounts', {name: tx.sender}, function(err, account) {
-                    if (err) throw err
-                    if (dao.availableBalance(account) < eco.accountPrice(lowerUser))
-                        cb(false, 'invalid tx not enough balance')
-                    else
-                        cb(true)
-                })
-        })
+        let newAcc = await cache.findOnePromise('accounts', {name: lowerUser})
+        if (newAcc)
+            return cb(false, 'invalid tx data.name already exists')
+        let account = await cache.findOnePromise('accounts', {name: tx.sender})
+        if (dao.availableBalance(account) < eco.accountPrice(lowerUser))
+            return cb(false, 'invalid tx not enough balance')
+        let bwBefore = new GrowInt(account.bw, {growth:Math.max(account.baseBwGrowth || 0, account.balance)/(config.bwGrowth)}).grow(ts)
+        if (bwBefore.v < tx.data.amount)
+            return cb(false, 'invalid tx not enough bw')
+        if (tx.data.ref) {
+            let refAcc = await cache.findOnePromise('accounts', {name: tx.data.ref})
+            if (!refAcc)
+                return cb(false, 'referrer does not exist')
+        }
+        cb(true)
     },
     execute: async (tx, ts, cb) => {
-        let newAccBw = {v:0,t:0}
+        let newAccBw = {v:tx.data.bw,t:ts}
         let newAccVt = {v:0,t:0}
         let baseBwGrowth = 0
-        if (config.preloadBwGrowth && (!config.masterNoPreloadAcc || tx.sender !== config.masterName || config.masterPaysForUsernames)) {
-            newAccBw = {v:0,t:ts}
+        if (config.preloadBwGrowth && (!config.masterNoPreloadAcc || tx.sender !== config.masterName || config.masterPaysForUsernames))
             baseBwGrowth = Math.floor(eco.accountPrice(tx.data.name)/config.preloadBwGrowth)
-        }
         await cache.insertOnePromise('accounts', {
             name: tx.data.name.toLowerCase(),
             pub: tx.data.pub,
@@ -54,7 +59,7 @@ module.exports = {
             bw: newAccBw,
             vt: newAccVt,
             baseBwGrowth: baseBwGrowth,
-            follows: [],
+            follows: [...(tx.data.ref?[tx.data.ref]:[])],
             followers: [],
             keys: [],
             proposalVotes: [],
@@ -63,7 +68,8 @@ module.exports = {
             created: {
                 by: tx.sender,
                 ts: ts
-            }
+            },
+            ref: tx.data.ref
         })
         await eco.incrementAccount()
         if (tx.sender !== config.masterName || config.masterPaysForUsernames) {

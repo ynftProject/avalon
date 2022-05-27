@@ -19,25 +19,10 @@ program
     .option('-W, --wait', 'wait for transaction confirmation')
     .option('-S, --spam [delay_in_ms]', 'repeats the tx every delay')
 
-program.command('account <pub_key> <new_user>')
+program.command('account <pub_key> <new_user> <bw> <ref>')
     .description('create a new account')
-    .action(function(pubKey, newUser) {
-        verifyAndSendTx('createAccount', pubKey, newUser)
-    }).on('--help', function(){
-        writeLine('')
-        writeLine('Extra Info:')
-        writeLine('  Account creation will burn coins depending on the chain config')
-        writeLine('  However, usernames matching public key are free (see second example)')
-        writeLine('')
-        writeLine('Examples:')
-        writeLine('  $ account d2EdJPNgFBwd1y9vhMzxw6vELRneC1gSHVEjguTG74Ce cool-name -F key.json -M alice')
-        writeLine('  $ account fR3e4CcvMRuv8yaGtoQ6t6j1hxfyocqhsKHi2qP9mb1E fr3e4ccvmruv8yagtoq6t6j1hxfyocqhskhi2qp9mb1e -F key.json -M alice')
-    })
-
-program.command('account-bw <pub_key> <new_user> <bw>')
-    .description('create a new account with bandwidth from account creator')
-    .action(function(pubKey, newUser, bw) {
-        verifyAndSendTx('createAccountWithBw', pubKey, newUser, bw)
+    .action(function(pubKey, newUser, bw, ref) {
+        verifyAndSendTx('createAccount', pubKey, newUser, bw, ref)
     }).on('--help', function(){
         writeLine('')
         writeLine('Extra Info:')
@@ -45,7 +30,8 @@ program.command('account-bw <pub_key> <new_user> <bw>')
         writeLine('  and will transfer <bw> bytes from the account creator to the new account.')
         writeLine('')
         writeLine('Examples:')
-        writeLine('  $ account d2EdJPNgFBwd1y9vhMzxw6vELRneC1gSHVEjguTG74Ce cool-name 30000 -F key.json -M alice')
+        writeLine('  $ account d2EdJPNgFBwd1y9vhMzxw6vELRneC1gSHVEjguTG74Ce cool-name 30000 \'referrer\' -F key.json -M alice')
+        writeLine('  $ account fR3e4CcvMRuv8yaGtoQ6t6j1hxfyocqhsKHi2qP9mb1E fr3e4ccvmruv8yagtoq6t6j1hxfyocqhskhi2qp9mb1e 0 \'\' -F key.json -M alice')
     })
 
 program.command('account-authorize <user> <id> <allowed_txs> <weight>')
@@ -319,32 +305,15 @@ program.command('md-sign <id>')
         writeLine('  $ mdqueue 1 -F key.json -M alice')
     })
 
-program.command('new-key <id> <pub> <allowed_txs>')
-    .description('add new key with custom perms')
-    .action(function(id, pub, allowedTxs) {
-        verifyAndSendTx('newKey', id, pub, allowedTxs)
-    }).on('--help', function(){
-        writeLine('')
-        writeLine('Transaction Types:')
-        for (const key in TransactionType)
-            writeLine('  '+TransactionType[key]+': '+key)
-        writeLine('')
-        writeLine('Examples:')
-        writeLine('  $ new-key posting tWWLqc5wPTbXPaWrFAfqUwGtEBLmUbyavp3utwPUop2g [4,5,6,7,8] -F key.json -M alice')
-        writeLine('  $ new-key finance wyPSnqfmAKoz5gAWyPcND7Rot6es2aFgcDGDTYB89b4q [3] -F key.json -M alice')
-    })
-
-program.command('new-weighted-key <id> <pub> <allowed_txs> <weight>')
+program.command('new-key <id> <pub> <allowed_txs> <weight>')
     .description('add new key with custom perms and weight')
     .action(function(id, pub, allowedTxs, weight) {
-        verifyAndSendTx('newWeightedKey', id, pub, allowedTxs, weight)
+        verifyAndSendTx('newKey', id, pub, allowedTxs, weight)
     }).on('--help', function(){
         writeLine('')
         writeLine('Transaction Types:')
         for (const key in TransactionType)
             writeLine('  '+TransactionType[key]+': '+key)
-        writeLine('')
-        writeLine('WARNING: Multi-signature setup is for advanced users only.')
         writeLine('')
         writeLine('Examples:')
         writeLine('  $ new-key posting tWWLqc5wPTbXPaWrFAfqUwGtEBLmUbyavp3utwPUop2g [4,5,6,7,8] 1 -F key.json -M alice')

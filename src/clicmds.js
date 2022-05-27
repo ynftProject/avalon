@@ -30,8 +30,8 @@ let cmds = {
         return sign(priv, sender, tx)
     },
 
-    createAccount: (privKey, sender, pub, name) => {
-        let tx = '{"type":0,"data":{"pub":"'+pub+'","name":"'+name+'"}}'
+    createAccount: (privKey, sender, pub, name, bw, ref) => {
+        let tx = '{"type":0,"data":{"pub":"'+pub+'","name":"'+name+'","bw":'+parseInt(bw)+', "ref":"'+ref+'"}}'
         return sign(privKey, sender, tx)
     }, 
 
@@ -87,10 +87,10 @@ let cmds = {
         return sign(privKey, sender, tx)
     },
 	
-    newKey: (privKey, sender, id, pub, types) => {
+    newKey: (privKey, sender, id, pub, types, weight) => {
         let tx = '{"type":9,"data":{"id":"'+
 			id+'","pub":"'+
-			pub+'","types":'+types+'}}'
+			pub+'","types":'+types+',"weight":'+weight+'}}'
         return sign(privKey, sender, tx)
     },
 	
@@ -147,30 +147,18 @@ let cmds = {
         return sign(privKey, sender, tx)
     },
 
-    newWeightedKey: (privKey, sender, id, pub, types, weight) => {
-        let tx = '{"type":20,"data":{"id":"'+
-			id+'","pub":"'+
-			pub+'","types":'+types+',"weight":'+weight+'}}'
-        return sign(privKey, sender, tx)
-    },
-
     setSignatureThreshold: (privKey, sender, thresholds) => {
-        let tx = '{"type":21,"data":{"thresholds":'+thresholds+'}}'
+        let tx = '{"type":22,"data":{"thresholds":'+thresholds+'}}'
         return sign(privKey, sender, tx)
     },
 
     setPasswordWeight: (privKey, sender, weight) => {
-        let tx = '{"type":22,"data":{"weight":'+weight+'}}'
+        let tx = '{"type":23,"data":{"weight":'+weight+'}}'
         return sign(privKey, sender, tx)
     },
 
     unsetSignatureThreshold: (privKey, sender, types) => {
-        let tx = '{"type":23,"data":{"types":'+types+'}}'
-        return sign(privKey, sender, tx)
-    },
-
-    createAccountWithBw: (privKey, sender, pub, name, bw) => {
-        let tx = '{"type":24,"data":{"pub":"'+pub+'","name":"'+name+'","bw":'+parseInt(bw)+'}}'
+        let tx = '{"type":24,"data":{"types":'+types+'}}'
         return sign(privKey, sender, tx)
     },
 

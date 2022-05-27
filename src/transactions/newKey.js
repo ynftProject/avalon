@@ -1,6 +1,6 @@
 module.exports = {
     bsonValidate: true,
-    fields: ['id', 'pub', 'types'],
+    fields: ['id', 'pub', 'types', 'weight'],
     validate: (tx, ts, legitUser, cb) => {
         if (!validate.string(tx.data.id, config.keyIdMaxLength)) {
             cb(false, 'invalid tx data.id'); return
@@ -16,7 +16,11 @@ module.exports = {
             if (!Number.isInteger(tx.data.types[i])) {
                 cb(false, 'invalid tx all types must be integers'); return
             }
-        
+
+        // validate key weight
+        if (!validate.integer(tx.data.weight,false,false))
+            return cb(false, 'invalid tx data.weight must be a positive integer')
+
         cache.findOne('accounts', {name: tx.sender}, function(err, account) {
             if (!account)
                 cb(false, 'invalid tx sender does not exist')

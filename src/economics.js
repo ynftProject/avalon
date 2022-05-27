@@ -319,43 +319,11 @@ let eco = {
         logr.econ('PRINT:'+vt+' VT => '+thNewCoins+' dist', stats.avail)
         return thNewCoins
     },
-    rentability: (ts1, ts2, isDv) => {
-        let ts = ts2 - ts1
-        if (ts < 0) throw 'Invalid timestamp in rentability calculation'
-
-        // https://imgur.com/a/GTLvs37
-        let directionRent = isDv ? config.ecoDvRentFactor : 1
-        let startRentability = config.ecoStartRent
-        let baseRentability = config.ecoBaseRent
-        let rentabilityStartTime = config.ecoRentStartTime
-        let rentabilityEndTime = config.ecoRentEndTime
-        let claimRewardTime = config.ecoClaimTime
-
-        // requires that :
-        // rentabilityStartTime < rentabilityEndTime < claimRewardTime
-
-        // between rentStart and rentEnd => 100% max rentability
-        let rentability = 1
-
-        if (ts === 0)
-            rentability = startRentability
-        
-        else if (ts < rentabilityStartTime)
-            // less than one day, rentability grows from 50% to 100%
-            rentability = startRentability + (1-startRentability) * ts / rentabilityStartTime
-
-        else if (ts >= claimRewardTime)
-            // past 7 days, 50% base rentability
-            rentability = baseRentability
-
-        else if (ts > rentabilityEndTime)
-            // more than 3.5 days but less than 7 days
-            // decays from 100% to 50%
-            rentability = baseRentability + (1-baseRentability) * (claimRewardTime-ts) / (claimRewardTime-rentabilityEndTime)
-
-
-        rentability = Math.floor(directionRent*rentability*Math.pow(10, config.ecoRentPrecision))/Math.pow(10, config.ecoRentPrecision)
-        return rentability
+    incrementAccount: async () => {
+        let avgs = await cache.findOnePromise('state',{_id: 2})
+        avgs.tvap.count++
+        avgs.earning.count++
+        await cache.updateOnePromise('state',{_id: 2},{$set:{tvap: avgs.tvap, earning: avgs.earning}})
     },
     round: (val = 0) => Math.round(val*Math.pow(10,config.ecoClaimPrecision))/Math.pow(10,config.ecoClaimPrecision),
     floor: (val = 0) => Math.floor(val*Math.pow(10,config.ecoClaimPrecision))/Math.pow(10,config.ecoClaimPrecision)

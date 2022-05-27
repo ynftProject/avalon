@@ -20,7 +20,7 @@ module.exports = {
             
         })
     },
-    execute: (tx, ts, cb) => {
+    execute: async (tx, ts, cb) => {
         // same as NEW_ACCOUNT but with starting tx.data.bw bytes
         // bandwidth debited from account creator in collectGrowInts() method in transaction.js
         let newAccBw = {v:tx.data.bw,t:ts}
@@ -28,7 +28,7 @@ module.exports = {
         let baseBwGrowth = 0
         if (config.preloadBwGrowth && (!config.masterNoPreloadAcc || tx.sender !== config.masterName || config.masterPaysForUsernames))
             baseBwGrowth = Math.floor(eco.accountPrice(tx.data.name)/config.preloadBwGrowth)
-        cache.insertOne('accounts', {
+        await cache.insertOnePromise('accounts', {
             name: tx.data.name.toLowerCase(),
             pub: tx.data.pub,
             balance: 0,
@@ -46,23 +46,17 @@ module.exports = {
                 by: tx.sender,
                 ts: ts
             }
-        }, function(){
-            if (tx.sender !== config.masterName || config.masterPaysForUsernames)
-                cache.updateOne('accounts', 
-                    {name: tx.sender},
-                    {$inc: {balance: -eco.accountPrice(tx.data.name)}}, function() {
-                        cache.findOne('accounts', {name: tx.sender}, function(err, acc) {
-                            if (err) throw err
-                            // update his bandwidth
-                            acc.balance += eco.accountPrice(tx.data.name)
-                            transaction.updateGrowInts(acc, ts, function() {
-                                transaction.adjustNodeAppr(acc, -eco.accountPrice(tx.data.name), function() {
-                                    cb(true, null, eco.accountPrice(tx.data.name))
-                                })
-                            })
-                        })
-                    })
-            else cb(true)
         })
+        await eco.incrementAccount()
+        if (tx.sender !== config.masterName || config.masterPaysForUsernames) {
+            await cache.updateOnePromise('accounts', 
+                {name: tx.sender},
+                {$inc: {balance: -eco.accountPrice(tx.data.name)}})
+            let acc = await cache.findOnePromise('accounts', {name: tx.sender})
+            // update his bandwidth
+            acc.balance += eco.accountPrice(tx.data.name)
+            await transaction.updateIntsAndNodeApprPromise(acc,ts,-eco.accountPrice(tx.data.name))
+            cb(true, null, eco.accountPrice(tx.data.name))
+        } else cb(true)
     }
 }

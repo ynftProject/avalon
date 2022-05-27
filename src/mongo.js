@@ -66,6 +66,7 @@ let mongo = {
             await mongo.insertMasterAccount()
             await mongo.insertBlockZero()
             await mongo.mintGenesisNFTs()
+            await mongo.initEconAvgs()
             return
         }
         
@@ -173,6 +174,28 @@ let mongo = {
                 },
                 ts: 0
             })
+    },
+    initEconAvgs: async () => {
+        logr.info('Creating TVAP and average earnings document...')
+        await db.collection('state').insertOne({
+            _id: 2,
+            tvap: {
+                total: '0',
+                count: 1
+            },
+            earning: {
+                total: '0',
+                count: 1
+            },
+            currentDistPool: {
+                total: 0,
+                accounts: 1
+            },
+            previousDistPool: {
+                total: 0,
+                accounts: 1
+            }
+        })
     },
     addMongoIndexes: async () => {
         await db.collection('accounts').createIndex({name:1})

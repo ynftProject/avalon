@@ -109,7 +109,7 @@ let config = {
             // key: transaction id (see transaction.js:TransactionType)
             // value: null/0 (default): enabled, 1: disabled, 2: master-only
             txLimits: {
-                15: 2
+                12: 2
             },
             // the number of ms needed for 0.01 DTC to generate 1 vt
             vtGrowth: 360000000, // +1 vt per hour per DTC (3600 * 1000 * 100)

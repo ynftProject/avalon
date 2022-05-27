@@ -176,7 +176,7 @@ let transaction = {
         return vtBefore.v
     },
     collectGrowInts: (tx, ts, cb) => {
-        cache.findOne('accounts', {name: tx.sender}, function(err, account) {
+        cache.findOne('accounts', {name: tx.sender}, async function(err, account) {
             // collect bandwidth
             let bandwidth = new GrowInt(account.bw, {
                 growth: Math.max(account.baseBwGrowth || 0, account.balance)/(config.bwGrowth),
@@ -194,6 +194,7 @@ let transaction = {
                 bw.v -= tx.data.bw
 
             // collect voting power when needed
+            let oldVt = account.vt.v
             let vt = null
             let vtGrowConfig = {
                 growth: account.balance / config.vtGrowth,
@@ -209,6 +210,7 @@ let transaction = {
             default:
                 break
             }
+            let vtChange = vt.v - oldVt
 
             // update vote lock for proposals
             let newLock = 0
@@ -238,13 +240,13 @@ let transaction = {
                     changes.nftBids = activeNftBids
             }
             logr.trace('GrowInt Collect', account.name, changes)
-            cache.updateOne('accounts', 
+            await cache.updateOnePromise('accounts', 
                 {name: account.name},
-                {$set: changes},
-                function(err) {
-                    if (err) throw err
-                    cb(true)
-                })
+                {$set: changes})
+            let avgs = await cache.findOnePromise('state',{_id: 2})
+            avgs.tvap.total = (BigInt(avgs.tvap.total)+BigInt(vtChange)).toString()
+            await cache.updateOnePromise('state',{_id: 2},{$set:{tvap: avgs.tvap}})
+            cb(true)
         })
     },
     execute: (tx, ts, cb) => {
@@ -270,11 +272,13 @@ let transaction = {
             growth: Math.max(account.baseBwGrowth || 0, account.balance)/(config.bwGrowth),
             max: config.bwMax
         }).grow(ts)
+        let oldVt = account.vt.v
         let vt = new GrowInt(account.vt, {growth:account.balance/(config.vtGrowth)}).grow(ts)
         if (!bw || !vt) {
             logr.fatal('error growing grow int', account, ts)
             return
         }
+        let vtChange = vt.v - oldVt
         logr.trace('GrowInt Update', account.name, bw, vt)
         cache.updateOne('accounts', 
             {name: account.name},
@@ -282,8 +286,11 @@ let transaction = {
                 bw: bw,
                 vt: vt
             }},
-            function(err) {
+            async function(err) {
                 if (err) throw err
+                let avgs = await cache.findOnePromise('state',{_id: 2})
+                avgs.tvap.total = (BigInt(avgs.tvap.total)+BigInt(vtChange)).toString()
+                await cache.updateOnePromise('state',{_id: 2},{$set:{tvap: avgs.tvap}})
                 cb(true)
             })
     },

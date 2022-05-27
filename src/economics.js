@@ -1,5 +1,3 @@
-const TransactionType = require('./transactions').Types
-
 // List of potential community-breaking abuses:
 // 1- Multi accounts voting (cartoons)
 // 2- Bid-bots (selling votes)
@@ -44,7 +42,7 @@ let eco = {
             if (block.dist)
                 lastCDist += block.dist
 
-            eco.history.push({_id: block._id, votes: eco.tallyVotes(block.txs)})
+            eco.history.push({_id: block._id, votes: block.vp || 0})
         }
 
         eco.history[eco.history.length-1].cDist = eco.round(lastCDist)
@@ -57,7 +55,7 @@ let eco = {
         let oldBurn = lastIdx >= 0 ? chain.recentBlocks[lastIdx].burn || 0 : 0
         eco.history.push({
             _id: nextBlock._id,
-            votes: eco.tallyVotes(nextBlock.txs),
+            votes: nextBlock.vp || 0,
             cDist: eco.round(eco.history[eco.history.length-1].cDist - oldDist + (nextBlock.dist || 0)),
             cBurn: eco.round(eco.history[eco.history.length-1].cBurn - oldBurn + (nextBlock.burn || 0))
         })
@@ -69,16 +67,6 @@ let eco = {
             eco.history.shift()
             extraBlocks--
         }
-    },
-    tallyVotes: (txs = []) => {
-        let votes = 0
-        for (let y = 0; y < txs.length; y++)
-            if (txs[y].type === TransactionType.VOTE
-                || txs[y].type === TransactionType.COMMENT
-                || txs[y].type === TransactionType.PROMOTED_COMMENT
-                || (txs[y].type === TransactionType.TIPPED_VOTE && config.hotfix1))
-                votes += Math.abs(txs[y].data.vt)
-        return votes
     },
     rewardPool: () => {
         let theoricalPool = config.rewardPoolAmount
@@ -138,155 +126,69 @@ let eco = {
         price += Math.round(extra*mult)
         return price
     },
-    curation: (author, link, cb) => {
-        cache.findOne('contents', {_id: author+'/'+link}, function(err, content) {
-            let currentVote = content.votes[content.votes.length-1]
+    curation: async (author, link, currentVote) => {
+        let content = await cache.findOnePromise('contents',{_id:author+'/'+link})
+        let thNewCoins = currentVote.dv ? 0 : eco.print(currentVote.vt)
+        let shares = {
+            author: config.ecoAuthorReward,
+            voter: config.ecoCurationReward,
+            fee: config.ecoMasterFee,
+            authorReward: 0,
+            voterReward: 0,
+            feeReward: 0
+        }
 
-            // first loop to calculate the VP of active votes
-            let sumVtWinners = 0
-            for (let i = 0; i < content.votes.length; i++)
-                if (!content.votes[i].claimed)
-                    if (currentVote.vt*content.votes[i].vt > 0)
-                        sumVtWinners += content.votes[i].vt
-
-            // second loop to calculate each active votes shares
-            let winners = []
-            for (let i = 0; i < content.votes.length; i++)
-                if (!content.votes[i].claimed)
-                    if (currentVote.vt*content.votes[i].vt > 0) {
-                        // same vote direction => winner
-                        let winner = content.votes[i]
-                        winner.share = winner.vt / sumVtWinners
-                        winners.push(winner)
-                    }
-
-            let thNewCoins = eco.print(currentVote.vt)
-            // share the new coins between winners
-            let newCoins = 0
-            for (let i = 0; i < winners.length; i++) {
-                if (!winners[i].gross)
-                    winners[i].gross = 0
-                
-                let won = thNewCoins * winners[i].share
-                let rentabilityWinner = eco.rentability(winners[i].ts, currentVote.ts, currentVote.vt < 0)
-                won *= rentabilityWinner
-                won = eco.floor(won)
-                winners[i].gross += won
-                newCoins += won
-                delete winners[i].share
-
-                // logr.econ(winners[i].u+' wins '+won+' coins with rentability '+rentabilityWinner)
+        if (!currentVote.dv) {
+            let ownership = await cache.findOnePromise('nftOwnership',{_id:author+'/'+currentVote.u})
+            if (ownership && ownership.count > 0 && ownership.since < content.ts) {
+                shares.author = config.ecoAuthorRewardOwning
+                shares.voter = config.ecoCurationRewardOwning,
+                shares.fee = config.ecoMasterFeeOwning
             }
-            newCoins = eco.round(newCoins)
-
-            // reconstruct the votes array
-            let newVotes = []
-            for (let i = 0; i < content.votes.length; i++)
-                if (!content.votes[i].claimed && currentVote.vt*content.votes[i].vt > 0) {
-                    for (let y = 0; y < winners.length; y++)
-                        if (winners[y].u === content.votes[i].u)
-                            newVotes.push(winners[y])
-                } else newVotes.push(content.votes[i])
-
-            // if there are opposite votes
-            // burn 50% of the printed DTC in anti-chronological order
-            let newBurn = 0
-            let takeAwayAmount = thNewCoins*config.ecoPunishPercent
-            let i = content.votes.length - 1
-            while (takeAwayAmount !== 0 && i>=0) {
-                if (i === 0 && !config.ecoPunishAuthor)
-                    break
-                if (!content.votes[i].claimed && content.votes[i].vt*currentVote.vt < 0)
-                    if (content.votes[i].gross >= takeAwayAmount) {
-                        content.votes[i].gross -= takeAwayAmount
-                        newBurn += takeAwayAmount
-                        takeAwayAmount = 0
-                    } else {
-                        takeAwayAmount -= content.votes[i].gross
-                        newBurn += content.votes[i].gross
-                        content.votes[i].gross = 0
-                    }
-                i--
+            shares.authorReward = Math.floor(thNewCoins*shares.author/10000)
+            shares.voterReward = Math.floor(thNewCoins*shares.voter/10000)
+            shares.feeReward = Math.floor(thNewCoins*shares.fee/10000)
+            if (shares.authorReward) {
+                let authorAcc = await cache.findOnePromise('accounts',{name: author})
+                await cache.updateOnePromise('accounts',{name: author},{$inc:{balance: shares.authorReward, earningLock: shares.authorReward, earnings: shares.authorReward}})
+                transaction.updateIntsAndNodeApprPromise(authorAcc,currentVote.ts,shares.authorReward)
             }
-            newBurn = eco.round(newBurn)
-            
-            logr.econ(newCoins + ' dist from the vote')
-            logr.econ(newBurn + ' burn from the vote')
-
-            // compute final claimable amount after author tip
-            let authorVote = -1
-            let authorVoteClaimed = false
-            let totalAuthorTip = 0
-            let precisionMulti = Math.pow(10,config.ecoClaimPrecision+config.tippedVotePrecision)
-            // determine existence and position of author vote
-            for (let v = 0; v < newVotes.length; v++)
-                if (newVotes[v].u === content.author) {
-                    authorVote = v
-                    if (newVotes[v].claimed) authorVoteClaimed = true
-                    if (!config.allowRevotes) break
-                }
-            // tally up tip amount
-            for (let v = 0; v < newVotes.length; v++) {
-                if (authorVote >= 0 && newVotes[v].u !== content.author && newVotes[v].tip)
-                    if (!authorVoteClaimed) {
-                        let tipAmt = (newVotes[v].gross * Math.pow(10,config.ecoClaimPrecision)) * (newVotes[v].tip * Math.pow(10,config.tippedVotePrecision))
-                        totalAuthorTip += tipAmt
-                        newVotes[v].totalTip = tipAmt / precisionMulti
-                        newVotes[v].claimable = ((newVotes[v].gross * precisionMulti) - tipAmt) / precisionMulti
-                    } else
-                        newVotes[v].claimable = ((newVotes[v].gross * precisionMulti) - (newVotes[v].totalTip * precisionMulti)) / precisionMulti
-                else if (newVotes[v].u !== content.author)
-                    newVotes[v].claimable = newVotes[v].gross
-                // failsafe to ensure claimable cannot be negative
-                if (newVotes[v].claimable < 0)
-                    newVotes[v].claimable = 0
+            if (shares.voterReward) {
+                let voterAcc = await cache.findOnePromise('accounts',{name: currentVote.u})
+                await cache.updateOnePromise('accounts',{name: currentVote.u},{$inc:{balance: shares.voterReward, earnings: shares.voterReward}})
+                transaction.updateIntsAndNodeApprPromise(voterAcc,currentVote.ts,shares.voterReward)
             }
-            // apply all tips to author vote
-            if (authorVote >= 0 && !authorVoteClaimed)
-                newVotes[authorVote].claimable = ((newVotes[authorVote].gross * precisionMulti) + totalAuthorTip) / precisionMulti
+            if (shares.feeReward) {
+                let feeAcc = await cache.findOnePromise('accounts',{name: config.masterName})
+                await cache.updateOnePromise('accounts',{name: config.masterName},{$inc:{balance: shares.feeReward}})
+                transaction.updateIntsAndNodeApprPromise(feeAcc,currentVote.ts,shares.feeReward)
+            }
+            if (shares.authorReward || shares.voterReward) {
+                let avgs = await cache.findOnePromise('state',{_id: 2})
+                avgs.earning.total = (BigInt(avgs.earning.total)+BigInt(shares.authorReward)+BigInt(shares.voterReward)).toString()
+                await cache.updateOnePromise('state',{_id: 2},{$set:{earning: avgs.earning}})
+            }
+            currentVote.authorDist = shares.authorReward
+            currentVote.voterDist = shares.voterReward
+            currentVote.feeDist = shares.feeReward
+            logr.econ('shares',shares)
+        }
+        let newCoins = shares.authorReward+shares.voterReward+shares.feeReward
+        logr.econ(newCoins + ' dist from the vote')
 
-            // add dist/burn/votes to currentBlock eco stats
-            eco.currentBlock.dist += newCoins
-            eco.currentBlock.dist = eco.round(eco.currentBlock.dist)
-            eco.currentBlock.burn += newBurn
-            eco.currentBlock.burn = eco.round(eco.currentBlock.burn)
-            eco.currentBlock.votes += currentVote.vt
+        // add dist/burn/votes to currentBlock eco stats
+        eco.currentBlock.dist += newCoins
+        eco.currentBlock.dist = eco.round(eco.currentBlock.dist)
+        eco.currentBlock.votes += currentVote.vt
 
-            // updating the content
-            // increase the dist amount for display
-            // and update the votes array
-            cache.updateOne('contents', {_id: author+'/'+link}, {
-                $inc: {dist: newCoins},
-                $set: {votes: newVotes}
-            }, function() {
-                if (config.masterFee > 0 && newCoins > 0) {
-                    // apply the master fee
-                    let distBefore = content.dist
-                    if (!distBefore) distBefore = 0
-                    let distAfter = distBefore + newCoins
-                    let benefReward = Math.floor(distAfter/config.masterFee) - Math.floor(distBefore/config.masterFee)
-                    if (benefReward > 0) 
-                        cache.updateOne('accounts', {name: config.masterName}, {$inc: {balance: benefReward}}, function() {
-                            cache.insertOne('distributed', {
-                                name: config.masterName,
-                                dist: benefReward,
-                                ts: currentVote.ts,
-                                _id: content.author+'/'+content.link+'/'+currentVote.u+'/'+config.masterName
-                            }, function() {
-                                cache.findOne('accounts', {name: config.masterName}, function(err, masterAccount) {
-                                    masterAccount.balance -= benefReward
-                                    transaction.updateGrowInts(masterAccount, currentVote.ts, function() {
-                                        transaction.adjustNodeAppr(masterAccount, benefReward, function() {
-                                            cb(newCoins, benefReward, newBurn)
-                                        })
-                                    })
-                                })
-                            })
-                        })
-                    else cb(newCoins, 0)
-                } else cb(newCoins, 0)
-            })
+        // updating the content
+        // increase the dist amount for display
+        // and update the votes array
+        await cache.updateOnePromise('contents', {_id: author+'/'+link}, {
+            $inc: {dist: newCoins},
+            $push: {votes: currentVote}
         })
+        return newCoins
     },
     print: (vt) => {
         // loads current reward pool data

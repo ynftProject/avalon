@@ -1,6 +1,6 @@
 module.exports = {
     bsonValidate: true,
-    fields: ['link', 'author'],
+    fields: ['author','link','downvote'],
     validate: (tx, ts, legitUser, cb) => {
         if (!validate.string(tx.data.author, config.accountMaxLength, config.accountMinLength, config.allowedUsernameChars, config.allowedUsernameCharsOnlyMiddle)) {
             logr.debug('invalid tx data.author')
@@ -11,6 +11,8 @@ module.exports = {
         }
         if (transaction.VP(ts, legitUser) < 1)
             return cb(false, 'account does not have VP to vote with')
+        if (typeof tx.data.downvote !== 'boolean')
+            return cb(false, 'downvote must be a boolean value')
 
         // checking if content exists
         cache.findOne('contents', {_id: tx.data.author+'/'+tx.data.link}, function(err, content) {
@@ -31,15 +33,14 @@ module.exports = {
         let vote = {
             u: tx.sender,
             ts: ts,
-            vt: vp
+            vt: vp,
+            dv: tx.data.downvote
         }
-        await cache.updateOnePromise('contents', {_id: tx.data.author+'/'+tx.data.link},{$push: { votes: vote }})
-        let content = await cache.findOnePromise('contents', {_id: tx.data.author+'/'+tx.data.link})
         // monetary distribution (curation rewards)
-        eco.curation(tx.data.author, tx.data.link, function(distCurators, distMaster) {
-            if (!content.pa && !content.pp)
-                rankings.update(tx.data.author, tx.data.link, vote, distCurators)
-            cb(true, distCurators+distMaster)
-        })
+        let dist = await eco.curation(tx.data.author, tx.data.link, vote)
+        let content = await cache.findOnePromise('contents', {_id: tx.data.author+'/'+tx.data.link})
+        if (!content.pa && !content.pp)
+            rankings.update(tx.data.author, tx.data.link, vote, dist)
+        cb(true, dist, 0, vp)
     }
 }

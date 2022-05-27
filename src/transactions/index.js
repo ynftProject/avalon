@@ -127,7 +127,7 @@ module.exports = {
         if (!transactions[tx.type]) {
             cb(false); return
         }
-        transactions[tx.type].execute(tx, ts, function(isValid, dist, burn) {
+        transactions[tx.type].execute(tx, ts, function(isValid, dist, burn, vp) {
             let timeDiff = performance.now()-startTime
             
             if (timeDiff > WARN_SLOW_EXEC)
@@ -135,7 +135,7 @@ module.exports = {
             else
                 logr.perf('tx:'+tx.type+' execution finish: '+timeDiff.toFixed(3)+'ms')
 
-            cb(isValid, dist, burn)
+            cb(isValid, dist, burn, vp)
         })
     },
     transactions: transactions

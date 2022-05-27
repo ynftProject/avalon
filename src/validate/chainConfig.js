@@ -13,9 +13,13 @@ let types = {
 
 // proposals to update any of these must be specified along with the other fields in the same group
 let groups = {
-    ecoRentTimes: {
-        members: ['ecoRentStartTime','ecoRentEndTime','ecoClaimTime'],
-        validate: (v1,v2,v3) => v1 < v2 && v2 < v3
+    ose: {
+        members: ['ecoAuthorReward','ecoCurationReward','ecoMasterFee'],
+        validate: (v1,v2,v3) => v1+v2+v3 === 10000
+    },
+    tse: {
+        members: ['ecoAuthorRewardOwning','ecoCurationRewardOwning','ecoMasterFeeOwning'],
+        validate: (v1,v2,v3) => v1+v2+v3 === 10000
     }
 }
 
@@ -33,18 +37,16 @@ let parameters = {
     accountPriceChars: types.posNonZeroInt,
     accountPriceMin: types.posInt,
 
-    ecoStartRent: types.posFloat,
-    ecoBaseRent: types.posFloat,
-    ecoDvRentFactor: types.posFloat,
-    ecoPunishPercent: types.posFloat,
-    ecoRentStartTime: types.posNonZeroInt,
-    ecoRentEndTime: types.posNonZeroInt,
-    ecoClaimTime: types.posNonZeroInt,
+    ecoAuthorReward: types.posBasisPoints,
+    ecoCurationReward: types.posBasisPoints,
+    ecoMasterFee: types.posBasisPoints,
+    ecoAuthorRewardOwning: types.posBasisPoints,
+    ecoCurationRewardOwning: types.posBasisPoints,
+    ecoMasterFeeOwning: types.posBasisPoints,
 
     rewardPoolMaxShare: types.posFloat,
     rewardPoolAmount: types.posNonZeroInt,
 
-    masterFee: types.posInt,
     masterDaoTxExp: types.posInt,
     vtPerBurn: types.posNonZeroInt,
     preloadVt: types.posInt,

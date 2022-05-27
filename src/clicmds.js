@@ -67,12 +67,8 @@ let cmds = {
         return sign(privKey, sender, tx)
     },
 
-    vote: (privKey, sender, link, author, weight, tag) => {
-        if (!tag) tag = ''
-        let tx = '{"type":5,"data":{"link":"'+
-			link+'", "author":"'+
-			author+'", "vt": '+
-			parseInt(weight)+', "tag": "'+tag+'"}}'
+    vote: (privKey, sender, author, link, dv) => {
+        let tx = '{"type":5,"data":{"author":"'+author+'", "link":"'+link+'", "downvote":'+dv+'}}'
         return sign(privKey, sender, tx)
     },
 	

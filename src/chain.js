@@ -17,7 +17,7 @@ const replay_output = process.env.REPLAY_OUTPUT || default_replay_output
 const max_batch_blocks = 10000
 
 class Block {
-    constructor(index, phash, timestamp, txs, miner, missedBy, dist, burn, signature, hash) {
+    constructor(index, phash, timestamp, txs, miner, missedBy, dist, burn, vp, signature, hash) {
         this._id = index
         this.phash = phash.toString()
         this.timestamp = timestamp
@@ -26,6 +26,7 @@ class Block {
         if (missedBy) this.missedBy = missedBy
         if (dist) this.dist = dist
         if (burn) this.burn = burn
+        if (vp) this.vp = vp
         this.hash = hash
         this.signature = signature
     }
@@ -59,6 +60,7 @@ let chain = {
             null,
             null,
             null,
+            0,
             '0000000000000000000000000000000000000000000000000000000000000000',
             config.originHash
         )
@@ -97,7 +99,7 @@ let chain = {
         let nextHash = chain.calculateHashForBlock(block)
         let signature = secp256k1.ecdsaSign(Buffer.from(nextHash, 'hex'), bs58.decode(process.env.NODE_OWNER_PRIV))
         signature = bs58.encode(signature.signature)
-        return new Block(block._id, block.phash, block.timestamp, block.txs, block.miner, block.missedBy, block.dist, block.burn, signature, nextHash)
+        return new Block(block._id, block.phash, block.timestamp, block.txs, block.miner, block.missedBy, block.dist, block.burn, block.vp, signature, nextHash)
     },
     canMineBlock: (cb) => {
         if (chain.shuttingDown) {
@@ -124,7 +126,7 @@ let chain = {
             // at this point transactions in the pool seem all validated
             // BUT with a different ts and without checking for double spend
             // so we will execute transactions in order and revalidate after each execution
-            chain.executeBlockTransactions(newBlock, true, false, function(validTxs, distributed, burned) {
+            chain.executeBlockTransactions(newBlock, true, false, function(validTxs, distributed, burned, vp) {
                 cache.rollback()
                 dao.resetID()
                 daoMaster.resetID()
@@ -138,6 +140,7 @@ let chain = {
 
                 if (distributed) newBlock.dist = distributed
                 if (burned) newBlock.burn = burned
+                if (vp) newBlock.vp = vp
 
                 // hash and sign the block with our private key
                 newBlock = chain.hashAndSignBlock(newBlock)
@@ -168,7 +171,7 @@ let chain = {
                 cb(true, newBlock); return
             }
             // straight execution
-            chain.executeBlockTransactions(newBlock, revalidate, true, function(validTxs, distributed, burned) {
+            chain.executeBlockTransactions(newBlock, revalidate, true, function(validTxs, distributed, burned, vp) {
                 // if any transaction is wrong, thats a fatal error
                 if (newBlock.txs.length !== validTxs.length) {
                     logr.error('Invalid tx(s) in block')
@@ -185,6 +188,11 @@ let chain = {
                 if (blockBurn !== burned) {
                     logr.error('Wrong burn amount', blockBurn, burned)
                     cb(true, newBlock); return
+                }
+                let blockVp = newBlock.vp || 0
+                if (blockVp !== vp) {
+                    logr.error('Wrong vp amount', blockVp, vp)
+                    return cb(true, newBlock)
                 }
 
                 // remove all transactions from this block from our transaction pool
@@ -575,7 +583,7 @@ let chain = {
                 if (revalidate)
                     transaction.isValid(tx, block.timestamp, function(isValid, error) {
                         if (isValid) 
-                            transaction.execute(tx, block.timestamp, function(executed, distributed, burned) {
+                            transaction.execute(tx, block.timestamp, function(executed, distributed, burned, vp) {
                                 if (!executed) {
                                     logr.fatal('Tx execution failure', tx)
                                     process.exit(1)
@@ -585,7 +593,8 @@ let chain = {
                                 callback(null, {
                                     executed: executed,
                                     distributed: distributed,
-                                    burned: burned
+                                    burned: burned,
+                                    vp: vp
                                 })
                             })
                         else {
@@ -594,7 +603,7 @@ let chain = {
                         }
                     })
                 else
-                    transaction.execute(tx, block.timestamp, function(executed, distributed, burned) {
+                    transaction.execute(tx, block.timestamp, function(executed, distributed, burned, vp) {
                         if (!executed)
                             logr.fatal('Tx execution failure', tx)
                         if (isFinal)
@@ -602,7 +611,8 @@ let chain = {
                         callback(null, {
                             executed: executed,
                             distributed: distributed,
-                            burned: burned
+                            burned: burned,
+                            vp: vp
                         })
                     })
                 i++
@@ -618,6 +628,7 @@ let chain = {
             let executedSuccesfully = []
             let distributedInBlock = 0
             let burnedInBlock = 0
+            let vpInBlock = 0
             for (let i = 0; i < results.length; i++) {
                 if (results[i].executed)
                     executedSuccesfully.push(block.txs[i])
@@ -625,6 +636,8 @@ let chain = {
                     distributedInBlock += results[i].distributed
                 if (results[i].burned)
                     burnedInBlock += results[i].burned
+                if (results[i].vp)
+                    vpInBlock += results[i].vp
             }
 
             // execute dao triggers
@@ -637,7 +650,7 @@ let chain = {
                 distributedInBlock = Math.round(distributedInBlock*1000) / 1000
                 burnedInBlock += daoBurn
                 burnedInBlock = Math.round(burnedInBlock*1000) / 1000
-                cb(executedSuccesfully, distributedInBlock, burnedInBlock)
+                cb(executedSuccesfully, distributedInBlock, burnedInBlock, vpInBlock)
             })
         })
     },
@@ -808,7 +821,7 @@ let chain = {
                 if (!isValidBlock)
                     return cb(true, blockNum)
             }
-            chain.executeBlockTransactions(blockToRebuild,process.env.REBUILD_NO_VALIDATE !== '1',true,(validTxs,dist,burn) => {
+            chain.executeBlockTransactions(blockToRebuild,process.env.REBUILD_NO_VALIDATE !== '1',true,(validTxs,dist,burn,vp) => {
                 // if any transaction is wrong, thats a fatal error
                 // transactions should have been verified in isValidNewBlock
                 if (blockToRebuild.txs.length !== validTxs.length) {
@@ -824,6 +837,10 @@ let chain = {
                 let blockBurn = blockToRebuild.burn || 0
                 if (blockBurn !== burn) 
                     return cb('Wrong burn amount ' + blockBurn + ' ' + burn, blockNum)
+                
+                let blockVp = blockToRebuild.vp || 0
+                if (blockVp !== vp) 
+                    return cb('Wrong vp amount ' + blockVp + ' ' + vp, blockNum)
                 
                 // update the config if an update was scheduled
                 config = require('./config.js').read(blockToRebuild._id)

@@ -16,7 +16,7 @@ let config = {
             // the base58 encoding alphabet
             b58Alphabet: '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz',
             // the block #0 genesis timestamp
-            block0ts: 1653029517158,
+            block0ts: 1653625800455,
             // the block time in ms
             blockTime: 3000,
             // the number of ms needed for 0.01 DTC to generate 1 byte of bw
@@ -25,27 +25,18 @@ let config = {
             bwMax: 64000,
             // the number of rounds of consensus before block is valid (min 2)
             consensusRounds: 2,
-            // base rentability of votes
-            ecoBaseRent: 0.50,
-            // downvote rentability factor
-            ecoDvRentFactor: 1,
             // the number of blocks from the past taken into consideration for econonomics
             ecoBlocks: 9600, // 8 hours
             // the precision of the claimable amounts
             ecoClaimPrecision: 3,
-            // the required number of ms before a vote reward can be claimed
-            ecoClaimTime: 604800000, // 7 days
-            // can the first vote rewards be altered by downvotes like other votes
-            ecoPunishAuthor: true,
-            // the percentage of coins that are burnt when there are opposite votes with rewards
-            ecoPunishPercent: 0.5,
-            // the number of ms before a vote reaches 100% rentability
-            ecoRentStartTime: 86400000,
-            // the number of ms when a vote rentability starts going down
-            ecoRentEndTime: 302400000,
             ecoRentPrecision: 6,
-            // starting rentability of votes
-            ecoStartRent: 0.75,
+            // author and voter split in basis points
+            ecoAuthorReward: 4500,
+            ecoCurationReward: 4500,
+            ecoMasterFee: 1000,
+            ecoAuthorRewardOwning: 1500,
+            ecoCurationRewardOwning: 7500,
+            ecoMasterFeeOwning: 1000,
             // the maximum number of follows a single account can do
             followsMax: 2000,
             // the max size of a stringified json input (content / user profile)
@@ -63,12 +54,6 @@ let config = {
             // the "master" account starting stake (total starting supply)
             // not applied if starting from a genesis.zip file
             masterBalance: 10000000000,
-            // the number of tokens distributed before master gets 1 free token printed.
-            // masterFee = 2 => <33% fee
-            // masterFee = 4 => <20% fee
-            // masterFee = 9 => <10% fee
-            // masterFee = 19 => <5% fee
-            masterFee: 9,
             // the init account username
             masterName: 'dtube',
             // if false master can create accounts with usernames without burning tokens

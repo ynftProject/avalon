@@ -143,7 +143,9 @@ let eco = {
         if (currentVote.vt > 0) {
             let earningLimit = await eco.earningLimit()
             let ownership = await cache.findOnePromise('nftOwnership',{_id:author+'/'+currentVote.u})
-            if (ownership && ownership.count > 0 && ownership.since < content.ts) {
+            let masterOwnership = await cache.findOnePromise('nftOwnership',{_id:config.masterName+'/'+currentVote.u})
+            if ((ownership && ownership.count > 0 && ownership.since < content.ts) ||
+                (masterOwnership && masterOwnership.count > 0 && masterOwnership.since < content.ts)) {
                 shares.author = config.ecoAuthorRewardOwning
                 shares.voter = config.ecoCurationRewardOwning,
                 shares.fee = config.ecoMasterFeeOwning

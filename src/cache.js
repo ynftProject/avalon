@@ -164,6 +164,9 @@ let cache = {
             cb(null, true)
         })
     },
+    updateManyPromise: (collection, query, changes) => {
+        return new Promise((rs) => cache.updateMany(collection,query,changes,() => rs(true)))
+    },
     updateMany: function(collection, query, changes, cb) {
         let key = cache.keyByCollection(collection)
         if (!query[key] || !query[key]['$in']) 

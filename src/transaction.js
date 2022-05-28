@@ -237,6 +237,11 @@ let transaction = {
                 if (account.nftBids[b].exp > ts && !account.nftBids[b].auction)
                     activeNftBids[b] = account.nftBids[b]
 
+            // claim distribution pool rewards if any
+            let claim = 0
+            if (account.verified >= 1 && account.verifyData && account.verifyData.lastTs)
+                claim = await eco.distPoolClaim(account.verifyData.lastTs,account.verifyData.lastClaimTs || 0)
+
             // update all at the same time !
             let changes = {bw: bw}
             if (vt) changes.vt = vt
@@ -247,6 +252,13 @@ let transaction = {
                     changes.proposalVotes = activeProposalVotes
                 if (Object.keys(account.nftBids).length !== Object.keys(activeNftBids).length)
                     changes.nftBids = activeNftBids
+            }
+            if (claim) {
+                changes.balance = account.balance+claim
+                account.verifyData.lastClaimTs = ts
+                changes.verifyData = account.verifyData
+                logr.econ('Dist Pool Claim '+account.name+' '+claim)
+                await transaction.adjustNodeAppr(account,claim)
             }
             logr.trace('GrowInt Collect', account.name, changes)
             await cache.updateOnePromise('accounts', 
@@ -266,11 +278,9 @@ let transaction = {
             })
         })
     },
-    updateIntsAndNodeApprPromise: (account, ts, change) => {
-        return new Promise(async (rs) => {
-            await transaction.updateGrowInts(account,ts)
-            transaction.adjustNodeAppr(account,change,() => rs(true))
-        })
+    updateIntsAndNodeApprPromise: async (account, ts, change) => {
+        await transaction.updateGrowInts(account,ts)
+        await transaction.adjustNodeAppr(account,change)
     },
     updateGrowInts: async (account, ts, cb) => {
         // updates the bandwidth and vote tokens when the balance changes (transfer, monetary distribution)
@@ -305,13 +315,11 @@ let transaction = {
         avgs.tvap.total = (BigInt(avgs.tvap.total)+BigInt(vtChange)).toString()
         await cache.updateOnePromise('state',{_id: 2},{$set:{tvap: avgs.tvap}})
     },
-    adjustNodeAppr: (acc, newCoins, cb) => {
+    adjustNodeAppr: async (acc, newCoins) => {
         // updates the node_appr values for the node owners the account approves (when balance changes)
         // account.balance is the one before the change (!)
-        if (!acc.approves || acc.approves.length === 0 || !newCoins) {
-            cb(true)
+        if (!acc.approves || acc.approves.length === 0 || !newCoins)
             return
-        }
 
         let node_appr_before = Math.floor(acc.balance/acc.approves.length)
         acc.balance += newCoins
@@ -322,13 +330,9 @@ let transaction = {
             node_owners.push(acc.approves[i])
         
         logr.trace('NodeAppr Update', acc.name, newCoins, node_appr-node_appr_before, node_owners.length)
-        cache.updateMany('accounts', 
+        await cache.updateManyPromise('accounts', 
             {name: {$in: node_owners}},
-            {$inc: {node_appr: node_appr-node_appr_before}}
-            , function(err) {
-                if (err) throw err
-                cb(true)
-            })
+            {$inc: {node_appr: node_appr-node_appr_before}})
     }
 }
 

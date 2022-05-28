@@ -643,12 +643,14 @@ let chain = {
             // execute dao triggers
             let daoBurn = await dao.runTriggers(block.timestamp)
             await nftAuctions.runTriggers(block.timestamp)
+            let unclaimedDistPool = await eco.distPoolCycle(block)
 
             // add rewards for the leader who mined this block
             let leaderDist = await chain.leaderRewards(block.miner, block.timestamp)
             distributedInBlock += leaderDist
             distributedInBlock = Math.round(distributedInBlock*1000) / 1000
             burnedInBlock += daoBurn
+            burnedInBlock += unclaimedDistPool
             burnedInBlock = Math.round(burnedInBlock*1000) / 1000
             cb(executedSuccesfully, distributedInBlock, burnedInBlock, vpInBlock)
         })

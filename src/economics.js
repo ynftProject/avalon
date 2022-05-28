@@ -246,6 +246,36 @@ let eco = {
         logr.econ('PRINT:'+vt+' VT => '+thNewCoins+' dist', stats.avail)
         return thNewCoins
     },
+    distPoolCycle: async (block) => {
+        let unclaimed = 0
+        if (block._id % config.distPoolCycle === 0) {
+            let avgs = await cache.findOnePromise('state',{ _id: 2 })
+            avgs.currentDistPool.ts = block.timestamp
+            avgs.currentDistPool.claimed = 0
+            if (avgs.previousDistPool.claimed)
+                unclaimed = avgs.previousDistPool.total - avgs.previousDistPool.claimed
+            else
+                unclaimed = avgs.previousDistPool.total
+            await cache.updateOnePromise('state',{ _id: 2 },{
+                $set: {
+                    currentDistPool: { total: 0, accounts: avgs.currentDistPool.accounts },
+                    previousDistPool: avgs.currentDistPool
+                }
+            })
+            logr.econ('Dist Pool Unclaimed: '+unclaimed)
+            logr.econ('Dist Pool Cycle:',avgs.currentDistPool)
+        }
+        return unclaimed
+    },
+    distPoolClaim: async (lastVerifiedTs,lastClaimTs) => {
+        let avgs = await cache.findOnePromise('state',{ _id: 2 })
+        if (lastVerifiedTs > avgs.previousDistPool.ts || lastClaimTs > avgs.previousDistPool.ts)
+            return 0
+        let claimAmount = Math.floor(avgs.previousDistPool.total/avgs.previousDistPool.accounts)
+        avgs.previousDistPool.claimed += claimAmount
+        await cache.updateOnePromise('state',{ _id: 2 },{$set: { previousDistPool: avgs.previousDistPool }})
+        return claimAmount
+    },
     incrementAccount: async () => {
         let avgs = await cache.findOnePromise('state',{_id: 2})
         avgs.tvap.count++

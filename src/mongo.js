@@ -123,6 +123,13 @@ let mongo = {
             proposalVotes: [],
             nftBids: {},
             verified: 2,
+            verifyData: {
+                json: {},
+                approvals: [['dtube', 2]],
+                requestTs: 0,
+                lastTs: 0,
+                lastClaimTs: 0
+            },
             created: {
                 by: '',
                 ts: config.block0ts
@@ -196,7 +203,8 @@ let mongo = {
             },
             previousDistPool: {
                 total: 0,
-                accounts: 1
+                accounts: 1,
+                ts: 0
             }
         })
     },

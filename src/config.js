@@ -105,6 +105,7 @@ let config = {
             earningLimitFactorPEL: 10,
             earningLimitFactorRPEL: 20,
             earningLimitFloor: 10000,
+            distPoolCycle: 600,
 
             // hf4
             maxKeys: 25,

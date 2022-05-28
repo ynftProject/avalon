@@ -58,6 +58,7 @@ let parameters = {
     earningLimitFactorPEL: types.posNonZeroFloat,
     earningLimitFactorRPEL: types.posNonZeroFloat,
     earningLimitFloor: types.posNonZeroInt,
+    distPoolCycle: types.posNonZeroInt,
 
     daoMembers: types.daoMembersArray,
     daoMembersMax: types.posInt,

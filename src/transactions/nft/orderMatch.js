@@ -48,6 +48,7 @@ module.exports = {
         let price = 0
         let fee = 0
         let sellerProceeds = 0
+        let royalty = 0
         let buyerName = ''
         if (tx.sender !== nft.owner) {
             // market buy
@@ -72,6 +73,16 @@ module.exports = {
             await cache.updateOnePromise('accounts',{ name: buyerName },{ $inc: { balance: -price }, $set: { nftBids: buyer.nftBids }})
             await transaction.updateIntsAndNodeApprPromise(buyer,ts,-price)
         }
+        
+        // author royalty
+        if (nft.owner !== nft.author) {
+            royalty = Math.ceil(price*config.nftSaleRoyalty/10000)
+            sellerProceeds -= royalty
+            let author = await cache.findOnePromise('accounts',{ name: nft.author })
+            await cache.updateOnePromise('accounts',{ name: nft.author },{ $inc: { balance: royalty }})
+            await transaction.updateIntsAndNodeApprPromise(author,ts,royalty)
+        }
+
         // credit proceeds to previous owner
         let seller = await cache.findOnePromise('accounts',{ name: nft.owner })
         await cache.updateOnePromise('accounts',{ name: nft.owner },{ $inc: { balance: sellerProceeds }})

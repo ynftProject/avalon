@@ -160,6 +160,7 @@ let config = {
             // nft
             // fee for every nft market sale/auction (basis points)
             nftSaleFee: 1000,
+            nftSaleRoyalty: 1000,
             // floor price
             nftFloorPrice: 100,
             // max order expiration (30 days)

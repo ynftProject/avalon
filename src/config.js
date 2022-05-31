@@ -105,6 +105,7 @@ let config = {
             earningLimitFactorPEL: 10,
             earningLimitFactorRPEL: 20,
             earningLimitFloor: 10000,
+            earningLockNftPremium: 1.5, // 1.5x of listing price
             distPoolCycle: 600,
 
             // hf4

@@ -28,7 +28,7 @@ module.exports = {
             else if (nft.ask.exp <= ts)
                 return cb(false, 'order already expired')
             let buyer = await cache.findOnePromise('accounts',{ name: tx.sender })
-            if (dao.availableBalance(buyer,ts) < nft.ask.price)
+            if (dao.availableBalance(buyer,ts) + nftAuctions.availableLocked(buyer.earningLock) < nft.ask.price)
                 return cb(false, 'insufficient balance')
         } else {
             let buyer = await cache.findOnePromise('accounts',{ name: tx.data.target })
@@ -48,6 +48,8 @@ module.exports = {
         let price = 0
         let fee = 0
         let sellerProceeds = 0
+        let earningLockSpent = 0
+        let earningLockPremium = 0
         let royalty = 0
         let buyerName = ''
         if (tx.sender !== nft.owner) {
@@ -60,8 +62,17 @@ module.exports = {
             buyerName = tx.sender
             let buyer = await cache.findOnePromise('accounts',{ name: buyerName })
             delete buyer.nftBids[tx.data.author+'/'+tx.data.link]
-            await cache.updateOnePromise('accounts',{ name: buyerName },{ $inc: { balance: -price }, $set: { nftBids: buyer.nftBids }})
-            await transaction.updateIntsAndNodeApprPromise(buyer,ts,-price)
+            let changes = { $inc: { balance: -price }, $set: { nftBids: buyer.nftBids }}
+            if (nftAuctions.availableLocked(buyer.earningLock)) {
+                let maxLockSpend = Math.ceil(price*config.earningLockNftPremium)
+                earningLockSpent = buyer.earningLock < maxLockSpend ? buyer.earningLock : maxLockSpend
+                earningLockPremium = Math.max(0,Math.round(earningLockSpent*(1-(1/config.earningLockNftPremium))))
+                changes.$inc.balance -= earningLockPremium
+                changes.$inc.earningLock = -earningLockSpent
+                logr.econ('Lock spend: '+earningLockSpent+'  Premium: '+earningLockPremium)
+            }
+            await cache.updateOnePromise('accounts',{ name: buyerName },changes)
+            await transaction.updateIntsAndNodeApprPromise(buyer,ts,-price-earningLockPremium)
         } else {
             // market sell
             buyerName = tx.data.target
@@ -90,8 +101,8 @@ module.exports = {
 
         // nft sale fee
         let feeAccount = await cache.findOnePromise('accounts',{ name: config.masterName })
-        await cache.updateOnePromise('accounts',{ name: config.masterName },{ $inc: { balance: fee }})
-        await transaction.updateIntsAndNodeApprPromise(feeAccount,ts,fee)
+        await cache.updateOnePromise('accounts',{ name: config.masterName },{ $inc: { balance: fee+earningLockPremium }})
+        await transaction.updateIntsAndNodeApprPromise(feeAccount,ts,fee+earningLockPremium)
 
         // remove nft ask orders and auctions
         if (nft.ask && nft.ask.auction) {

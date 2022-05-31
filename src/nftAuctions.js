@@ -1,6 +1,7 @@
-const cache = require("./cache")
-
 let nft = {
+    availableLocked: (lockedBalance) => {
+        return Math.min(lockedBalance,Math.floor(lockedBalance/config.earningLockNftPremium))
+    },
     loadActiveAuctions: async () => {
         let activeNfts = await db.collection('contents').find({'ask.auction': {$exists: true}}).toArray()
         for (let n in activeNfts)

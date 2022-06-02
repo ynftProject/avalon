@@ -46,7 +46,9 @@ const transactions = [
     require('./nft/auctionCreate.js'),
     require('./nft/auctionBid.js'),
     require('./verifyRequest.js'),
-    require('./verifyResponse.js')
+    require('./verifyResponse.js'),
+    require('./token/mint.js'),
+    require('./token/transfer.js')
 ]
 
 module.exports = {
@@ -91,7 +93,9 @@ module.exports = {
         NFT_AUCTION_CREATE: 40,
         NFT_AUCTION_BID: 41,
         VERIFY_REQUEST: 42,
-        VERIFY_RESPONSE: 43
+        VERIFY_RESPONSE: 43,
+        TOKEN_MINT: 44,
+        TOKEN_TRANSFER: 45
     },
     validate: (tx, ts, legitUser, cb) => {
         // logr.debug('tx:'+tx.type+' validation begins')

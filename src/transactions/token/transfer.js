@@ -25,10 +25,12 @@ module.exports = {
         let amount = BigInt(tx.data.amount)
         if (!sender['token'+tx.data.symbol] || tokenBal < amount)
             return cb(false, 'insufficient token balance')
+
+        // token lock specifics
         if (tx.data.receiver !== config.burnAccount &&
             tx.data.symbol === 'GC' &&
-            sender['token'+tx.data.symbol+'Lock'] &&
-            tokenBal - BigInt(sender['token'+tx.data.symbol+'Lock']) < amount)
+            sender['tokenGCLock'] &&
+            tokenBal - BigInt(sender['tokenGCLock']) < amount)
             return cb(false, 'cannot move locked GC tokens')
 
         cb(true)

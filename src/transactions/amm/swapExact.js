@@ -25,10 +25,15 @@ module.exports = {
         else if (output.tokenOutAmount < BigInt(tx.data.tokenOutMin))
             return cb(false, 'insufficient token output')
 
-        let swapper = await cache.findOnePromise('accounts',{ name: tx.sender })
-        if (tx.data.tokenInSymbol === 'YNFT' && dao.availableBalance(swapper,ts) < Number(tx.data.tokenInAmount))
-            return cb(false, 'insufficient ynft balance')
-        else if (tx.data.tokenInSymbol !== 'YNFT')
+        if (tx.data.tokenInSymbol === 'YNFT') {
+            let swapper = await cache.findOnePromise('accounts',{ name: tx.sender })
+            let avail = dao.availableBalance(swapper,ts)
+            if (tx.data.tokenOutSymbol === 'GC' && swapper.earningLock)
+                avail += swapper.earningLock
+            if (avail < Number(tx.data.tokenInAmount))
+                return cb(false, 'insufficient ynft balance')
+            return cb(true)
+        } else if (tx.data.tokenInSymbol !== 'YNFT')
             require('../token/transfer').validate({
                 data: {
                     symbol: tx.data.tokenInSymbol,
@@ -51,16 +56,33 @@ module.exports = {
         logr.econ('Swap exactly '+tx.data.tokenInAmount+' '+tx.data.tokenInSymbol+' for '+output.tokenOutAmount+' '+tx.data.tokenOutSymbol)
         if (tx.data.tokenInSymbol === 'YNFT') {
             let ynftAmtInt = Number(tx.data.tokenInAmount)
+            let unlockYnftAmtInt = 0
+            let set = {}
             let swapper = await cache.findOnePromise('accounts',{ name: tx.sender })
             await transaction.updateIntsAndNodeApprPromise(swapper,ts,-ynftAmtInt)
-            swapper = await cache.findOnePromise('accounts',{ name: tx.sender })
-            let deduction = Math.ceil(swapper.vt.v*ynftAmtInt/swapper.balance)
-            swapper.vt.v -= deduction
+            if (tx.data.tokenOutSymbol === 'GC' && swapper.earningLock) {
+                unlockYnftAmtInt = Math.min(swapper.earningLock,ynftAmtInt)
+                let unlockOutput = await amm.swapExact({
+                    data: {
+                        tokenInSymbol: tx.data.tokenInSymbol,
+                        tokenInAmount: unlockYnftAmtInt,
+                        tokenOutSymbol: 'GC'
+                    }
+                })
+                logr.econ('Unlock '+unlockYnftAmtInt+' YNFT for '+unlockOutput.tokenOutAmount+' locked GC')
+                set.tokenGCLock = (BigInt(swapper.tokenGCLock || 0) + unlockOutput.tokenOutAmount).toString()
+            }
+            if (unlockYnftAmtInt < ynftAmtInt) {
+                swapper = await cache.findOnePromise('accounts',{ name: tx.sender })
+                let deduction = Math.ceil(swapper.vt.v*(ynftAmtInt-unlockYnftAmtInt)/(swapper.balance-unlockYnftAmtInt))
+                swapper.vt.v -= deduction
+                set.vt = swapper.vt
+                await transaction.adjustTvap(-deduction)
+            }
             await cache.updateOnePromise('accounts',{ name: tx.sender },{
-                $inc: { balance: -ynftAmtInt },
-                $set: { vt: swapper.vt }
+                $inc: { balance: -ynftAmtInt, earningLock: -unlockYnftAmtInt },
+                $set: set
             })
-            await transaction.adjustTvap(-deduction)
             poolChanges.$set.ynft = (BigInt(output.pool.ynft) + BigInt(tx.data.tokenInAmount)).toString()
         } else {
             await require('../token/transfer').execute({

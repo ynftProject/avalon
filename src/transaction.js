@@ -264,9 +264,7 @@ let transaction = {
             await cache.updateOnePromise('accounts', 
                 {name: account.name},
                 {$set: changes})
-            let avgs = await cache.findOnePromise('state',{_id: 2})
-            avgs.tvap.total = (BigInt(avgs.tvap.total)+BigInt(vtChange)).toString()
-            await cache.updateOnePromise('state',{_id: 2},{$set:{tvap: avgs.tvap}})
+            await transaction.adjustTvap(vtChange)
             cb(true)
         })
     },
@@ -333,6 +331,12 @@ let transaction = {
         await cache.updateManyPromise('accounts', 
             {name: {$in: node_owners}},
             {$inc: {node_appr: node_appr-node_appr_before}})
+    },
+    adjustTvap: async (change) => {
+        // change in VP should be after growints update
+        let avgs = await cache.findOnePromise('state',{_id: 2})
+        avgs.tvap.total = (BigInt(avgs.tvap.total)+BigInt(change)).toString()
+        await cache.updateOnePromise('state',{_id: 2},{$set:{tvap: avgs.tvap}})
     }
 }
 

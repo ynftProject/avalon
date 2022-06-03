@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "base-x": "^3.0.8",
+    "bigint-isqrt": "^0.2.1",
     "body-parser": "^1.15.2",
     "bson": "^4.6.0",
     "clone-deep": "^4.0.1",

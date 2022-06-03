@@ -255,6 +255,16 @@ let cmds = {
     verifyResponse: (privKey, sender, target, approve) => {
         let tx = '{"type":43,"data":{"target":"'+target+'", "approve":'+approve+'}}'
         return sign(privKey, sender, tx)
+    },
+
+    tokenMint: (privKey, sender, symbol, amount, receiver) => {
+        let tx = '{"type":44,"data":{"symbol":"'+symbol+'", "amount":'+amount+', "receiver":"'+receiver+'"}}'
+        return sign(privKey, sender, tx)
+    },
+
+    tokenTransfer: (privKey, sender, symbol, amount, receiver, memo) => {
+        let tx = '{"type":45,"data":{"symbol":"'+symbol+'", "amount":'+amount+', "receiver":"'+receiver+'", "memo":"'+memo+'"}}'
+        return sign(privKey, sender, tx)
     }
 }
 

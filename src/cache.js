@@ -11,6 +11,7 @@ let cache = {
         playlists: {},
         masterdao: {},
         nftOwnership: {},
+        ammPools: {},
         state: {}
     },
     accounts: {},
@@ -20,6 +21,7 @@ let cache = {
     playlists: {},
     masterdao: {},
     nftOwnership: {},
+    ammPools: {},
     state: {},
     changes: [],
     inserts: [],

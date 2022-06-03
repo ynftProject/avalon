@@ -7,7 +7,7 @@ module.exports = {
         if (typeof tx.data.symbol !== 'string' || (tx.data.symbol !== 'GC' && tx.data.symbol !== 'YNFT-GC-LP'))
             return cb(false, 'invalid symbol')
         
-        if (!validate.integer(tx.data.amount,false,false))
+        if (!validate.bigint(tx.data.amount,false,false))
             return cb(false, 'invalid token amount')
         
         if (!validate.string(tx.data.receiver,config.accountMaxLength, config.accountMinLength, config.allowedUsernameChars, config.allowedUsernameCharsOnlyMiddle))
@@ -21,26 +21,32 @@ module.exports = {
             return cb(false, 'receiver does not exist')
         
         let sender = await cache.findOnePromise('accounts',{ name: tx.sender })
-        if (!sender['token'+tx.data.symbol] || sender['token'+tx.data.symbol] < tx.data.amount)
+        let tokenBal = BigInt(sender['token'+tx.data.symbol] || 0)
+        let amount = BigInt(tx.data.amount)
+        if (!sender['token'+tx.data.symbol] || tokenBal < amount)
             return cb(false, 'insufficient token balance')
         if (tx.data.receiver !== config.burnAccount &&
             tx.data.symbol === 'GC' &&
             sender['token'+tx.data.symbol+'Lock'] &&
-            sender['token'+tx.data.symbol] - sender['token'+tx.data.symbol+'Lock'] < tx.data.amount)
+            tokenBal - BigInt(sender['token'+tx.data.symbol+'Lock']) < amount)
             return cb(false, 'cannot move locked GC tokens')
 
         cb(true)
     },
     execute: async (tx, ts, cb) => {
         if (tx.sender !== config.burnAccount) {
-            let senderChange = {$inc:{}}
-            senderChange.$inc['token'+tx.data.symbol] = -tx.data.amount
-            await cache.updateOnePromise('accounts',{ name: tx.sender },senderChange)
+            let sender = await cache.findOnePromise('accounts',{ name: tx.sender })
+            let newBalance = BigInt(sender['token'+tx.data.symbol]) - BigInt(tx.data.amount)
+            await cache.updateOnePromise('accounts',{ name: tx.sender },{$set:{
+                ['token'+tx.data.symbol]: newBalance.toString()
+            }})
         }
         if (tx.data.receiver !== config.burnAccount) {
-            let receiverChange = {$inc:{}}
-            receiverChange.$inc['token'+tx.data.symbol] = tx.data.amount
-            await cache.updateOnePromise('accounts',{ name: tx.data.receiver },receiverChange)
+            let receiver = await cache.findOnePromise('accounts',{ name: tx.data.receiver })
+            let newBalance = BigInt(receiver['token'+tx.data.symbol] || 0) + BigInt(tx.data.amount)
+            await cache.updateOnePromise('accounts',{ name: tx.data.receiver },{$set:{
+                ['token'+tx.data.symbol]: newBalance.toString()
+            }})
         }
         cb(true)
     }

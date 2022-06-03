@@ -48,7 +48,11 @@ const transactions = [
     require('./verifyRequest.js'),
     require('./verifyResponse.js'),
     require('./token/mint.js'),
-    require('./token/transfer.js')
+    require('./token/transfer.js'),
+    require('./amm/addLiquidity.js'),
+    require('./amm/removeLiquidity.js'),
+    require('./amm/swapExact.js'),
+    require('./amm/swapForExact.js')
 ]
 
 module.exports = {
@@ -95,7 +99,11 @@ module.exports = {
         VERIFY_REQUEST: 42,
         VERIFY_RESPONSE: 43,
         TOKEN_MINT: 44,
-        TOKEN_TRANSFER: 45
+        TOKEN_TRANSFER: 45,
+        AMM_ADD_LIQUIDITY: 46,
+        AMM_REMOVE_LIQUIDITY: 47,
+        AMM_SWAP_EXACT: 48,
+        AMM_SWAP_FOR_EXACT: 49
     },
     validate: (tx, ts, legitUser, cb) => {
         // logr.debug('tx:'+tx.type+' validation begins')

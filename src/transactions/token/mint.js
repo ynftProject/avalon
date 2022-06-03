@@ -1,12 +1,13 @@
 module.exports = {
     fields: ['symbol','amount','receiver'],
     validate: async (tx, ts, legitUser, cb) => {
-        // for now, GC and YNFT-GC LP are the only tokens
+        // for now, GC and YNFT-GC-LP are the only tokens
         // only GC mints are transactable
+        // token symbol 'YNFT' and 'ynft' shall be reserved for the native token
         if (typeof tx.data.symbol !== 'string' || tx.data.symbol !== 'GC')
             return cb(false, 'invalid symbol')
         
-        if (!validate.integer(tx.data.amount,false,false))
+        if (!validate.bigint(tx.data.amount,false,false))
             return cb(false, 'invalid token amount')
         
         if (!validate.string(tx.data.receiver,config.accountMaxLength, config.accountMinLength, config.allowedUsernameChars, config.allowedUsernameCharsOnlyMiddle))

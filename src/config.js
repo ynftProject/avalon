@@ -108,6 +108,10 @@ let config = {
             earningLockNftPremium: 1.5, // 1.5x of listing price
             distPoolCycle: 600,
 
+            // amm swap fee (basis points)
+            ammFee: 30,
+            ammPricePrecision: 8n,
+
             // hf4
             maxKeys: 25,
             disallowVotingInactiveLeader: true,

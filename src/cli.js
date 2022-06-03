@@ -571,6 +571,32 @@ program.command('sign <transaction>')
         writeLine('  $ sign \'{"type":1,"data":{"target":"bob"}}\' -F key.json -M alice')
     })
 
+program.command('token-mint <symbol> <amount> <receiver>')
+    .description('mint token')
+    .action(function(symbol, amount, receiver) {
+        verifyAndSendTx('tokenMint', symbol, amount, receiver)
+    }).on('--help', function(){
+        writeLine('')
+        writeLine('Example:')
+        writeLine('  $ token-mint GC 1000 alice -F key.json -M master')
+    })
+
+program.command('token-transfer <symbol> <amount> <receiver>')
+    .alias('xfer-token')
+    .alias('token-xfer')
+    .option('--memo [text]', 'add a short message to the token transfer')
+    .description('transfer token')
+    .action(function(symbol, amount, receiver, options) {
+        let memo = ''
+        if (options && options.memo) memo = options.memo
+        verifyAndSendTx('tokenTransfer', symbol, amount, receiver, memo)
+    }).on('--help', function(){
+        writeLine('')
+        writeLine('Example:')
+        writeLine('  $ token-transfer GC 50 alice -F key.json -M bob')
+        writeLine('  $ token-transfer YNFT-GC-LP 20 john --memo "some message here" -F key.json -M bob')
+    })
+
 program.command('transfer <receiver> <amount>')
     .alias('xfer')
     .option('--memo [text]', 'add a short message to the transfer')    

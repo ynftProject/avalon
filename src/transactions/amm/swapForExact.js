@@ -1,5 +1,6 @@
 const amm = require('../../amm')
 const dao = require('../../dao')
+const txHistory = require('../../txHistory')
 
 module.exports = {
     fields: ['tokenInSymbol','tokenInMax','tokenOutSymbol','tokenOutAmount'],
@@ -54,6 +55,9 @@ module.exports = {
         let output = await amm.swapForExact(tx)
         let poolChanges = {$set:{}}
         logr.econ('Swap '+output.tokenInAmount+' '+tx.data.tokenInSymbol+' for exactly '+tx.data.tokenOutAmount+' '+tx.data.tokenOutSymbol)
+        let event = {
+            tokenInAmount: output.tokenInAmount.toString()
+        }
         if (tx.data.tokenInSymbol === 'YNFT') {
             let ynftAmtInt = Number(output.tokenInAmount)
             let unlockYnftAmtInt = 0
@@ -76,6 +80,8 @@ module.exports = {
                     lockedGC = output.tokenInAmount
                 }
                 logr.econ('Unlock '+unlockYnftAmtInt+' YNFT for '+lockedGC+' locked GC')
+                event.tokenOutLocked = lockedGC.toString()
+                event.ynftUnlocked = unlockYnftAmtInt.toString()
                 set.tokenGCLock = (BigInt(swapper.tokenGCLock || 0) + lockedGC).toString()
             }
             if (unlockYnftAmtInt < ynftAmtInt) {
@@ -118,6 +124,7 @@ module.exports = {
             poolChanges.$set[tx.data.tokenOutSymbol] = (BigInt(output.pool[tx.data.tokenOutSymbol]) - BigInt(tx.data.tokenOutAmount)).toString()
         }
         await cache.updateOnePromise('ammPools', { _id: output.pool._id },poolChanges)
+        txHistory.logEvent(tx.hash,event)
         cb(true)
     }
 }

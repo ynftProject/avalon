@@ -79,12 +79,6 @@ let config = {
             rewardPoolMaxShare: 0.1,
             // theoretical max reward pool in a cycle including leader rewards
             rewardPoolAmount: 150001,
-            // the maximum length of tags (on votes)
-            tagMaxLength: 25,
-            tagMaxPerContent: 5,
-            // precision of author tip percentage
-            // 1 => 10% step, 2 => 1% step, 3 => 0.1% step, 4 => 0.01% step
-            tippedVotePrecision: 2,
             // the time after which transactions expire and wont be accepted by nodes anymore
             txExpirationTime: 60000,
             // limit which transactions are available

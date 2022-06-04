@@ -60,6 +60,7 @@ let parameters = {
     earningLimitFloor: types.posNonZeroInt,
     earningLockNftPremium: types.posNonZeroFloat,
     distPoolCycle: types.posNonZeroInt,
+    ammFee: types.posBasisPoints,
 
     daoMembers: types.daoMembersArray,
     daoMembersMax: types.posInt,

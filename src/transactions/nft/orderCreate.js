@@ -1,4 +1,5 @@
 const dao = require('../../dao')
+const txHistory = require('../../txHistory')
 
 module.exports = {
     fields: ['author','link','price','exp'],
@@ -31,12 +32,17 @@ module.exports = {
             price: tx.data.price,
             exp: tx.data.exp
         }
+        let side = ''
         if (tx.sender !== nft.owner) {
             let bidder = await cache.findOnePromise('accounts',{ name: tx.sender })
             bidder.nftBids[tx.data.author+'/'+tx.data.link] = order
             await cache.updateOnePromise('accounts',{ name: tx.sender },{ $set: { nftBids: bidder.nftBids }})
-        } else
+            side = 'buy'
+        } else {
             await cache.updateOnePromise('contents',{ _id: tx.data.author+'/'+tx.data.link },{ $set: { ask: order }})
+            side = 'sell'
+        }
+        txHistory.logEvent(tx.hash,{side})
         cb(true)
     }
 }

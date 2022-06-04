@@ -1,5 +1,6 @@
 const dao = require('../../dao')
 const nftAuctions = require('../../nftAuctions')
+const txHistory = require('../../txHistory')
 
 module.exports = {
     fields: ['author','link','target','price'],
@@ -52,8 +53,10 @@ module.exports = {
         let earningLockPremium = 0
         let royalty = 0
         let buyerName = ''
+        let side = ''
         if (tx.sender !== nft.owner) {
             // market buy
+            side = 'buy'
             price = nft.ask.price
             if (nft.ask.auction && nft.ask.auction.price)
                 price = nft.ask.auction.price
@@ -75,6 +78,7 @@ module.exports = {
             await transaction.updateIntsAndNodeApprPromise(buyer,ts,-price-earningLockPremium)
         } else {
             // market sell
+            side = 'sell'
             buyerName = tx.data.target
             let buyer = await cache.findOnePromise('accounts',{ name: buyerName })
             price = buyer.nftBids[tx.data.author+'/'+tx.data.link].price
@@ -111,6 +115,11 @@ module.exports = {
                 nftAuctions.cancelBid(tx.data.author,tx.data.link,nft.ask.auction)
         }
         await cache.updateOnePromise('contents',{ _id: tx.data.author+'/'+tx.data.link },{ $set: { ask: {} }})
+
+        // log event
+        txHistory.logEvent(tx.hash, {
+            price, fee, sellerProceeds, earningLockSpent, earningLockPremium, royalty, side
+        })
 
         // transfer nft
         require('./transfer').execute({

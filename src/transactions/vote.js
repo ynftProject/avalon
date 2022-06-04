@@ -1,3 +1,5 @@
+const txHistory = require('../txHistory')
+
 module.exports = {
     bsonValidate: true,
     fields: ['author','link','downvote'],
@@ -37,6 +39,7 @@ module.exports = {
         let content = await cache.findOnePromise('contents', {_id: tx.data.author+'/'+tx.data.link})
         if (!content.pa && !content.pp)
             rankings.update(tx.data.author, tx.data.link, vote, dist)
+        txHistory.logEvent(tx.hash,{ vp })
         cb(true, dist, 0, vp)
     }
 }

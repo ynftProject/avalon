@@ -1,5 +1,6 @@
 const dao = require('../../dao')
 const amm = require('../../amm')
+const txHistory = require('../../txHistory')
 
 module.exports = {
     fields: ['tokenSymbol','tokenAmount','ynftAmount','minOut'],
@@ -66,6 +67,12 @@ module.exports = {
             $set: { vt: provider.vt }
         })
         await transaction.adjustTvap(-deduction)
+
+        txHistory.logEvent(tx.hash, {
+            ynftIn: output.ynftIn.toString(),
+            tokenIn: output.tokenIn.toString(),
+            lpOutput: output.lpOutput.toString()
+        })
 
         await require('../token/transfer').execute({
             data: {

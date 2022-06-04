@@ -1,4 +1,5 @@
 const amm = require('../../amm')
+const txHistory = require('../../txHistory')
 
 module.exports = {
     fields: ['tokenSymbol','lpAmount','tokenOutMin','ynftOutMin'],
@@ -36,6 +37,11 @@ module.exports = {
         let remover = await cache.findOnePromise('accounts',{ name: tx.sender })
         await cache.updateOnePromise('accounts',{ name: tx.sender },{ $inc: { balance: Number(output.ynftOut) }})
         await transaction.updateIntsAndNodeApprPromise(remover,ts,Number(output.ynftOut))
+
+        txHistory.logEvent(tx.hash, {
+            ynftOut: output.ynftOut.toString(),
+            tokenOut: output.tokenOut.toString()
+        })
 
         await require('../token/transfer').execute({
             data: {

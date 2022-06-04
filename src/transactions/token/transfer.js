@@ -42,6 +42,9 @@ module.exports = {
             await cache.updateOnePromise('accounts',{ name: tx.sender },{$set:{
                 ['token'+tx.data.symbol]: newBalance.toString()
             }})
+        } else {
+            let tokenSupply = await cache.findOnePromise('state',{_id: 3})
+            await cache.updateOnePromise('state',{_id: 3},{$set:{[tx.data.symbol]: (BigInt(tokenSupply[tx.data.symbol] || 0)+BigInt(tx.data.amount)).toString() }})
         }
         if (tx.data.receiver !== config.burnAccount) {
             let receiver = await cache.findOnePromise('accounts',{ name: tx.data.receiver })
@@ -49,6 +52,9 @@ module.exports = {
             await cache.updateOnePromise('accounts',{ name: tx.data.receiver },{$set:{
                 ['token'+tx.data.symbol]: newBalance.toString()
             }})
+        } else {
+            let tokenSupply = await cache.findOnePromise('state',{_id: 3})
+            await cache.updateOnePromise('state',{_id: 3},{$set:{[tx.data.symbol]: (BigInt(tokenSupply[tx.data.symbol])-BigInt(tx.data.amount)).toString() }})
         }
         cb(true)
     }

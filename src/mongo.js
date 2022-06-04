@@ -207,6 +207,11 @@ let mongo = {
                 ts: 0
             }
         })
+
+        await db.collection('state').insertOne({
+            _id: 3,
+            ynft: config.masterBalance.toString()
+        })
     },
     addMongoIndexes: async () => {
         await db.collection('accounts').createIndex({name:1})

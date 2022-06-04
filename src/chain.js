@@ -652,6 +652,12 @@ let chain = {
             burnedInBlock += daoBurn
             burnedInBlock += unclaimedDistPool
             burnedInBlock = Math.round(burnedInBlock*1000) / 1000
+
+            // update supply info
+            if (distributedInBlock || burnedInBlock) {
+                let supply = await cache.findOnePromise('state',{_id: 3})
+                await cache.updateOnePromise('state',{_id: 3},{$set: { ynft: (BigInt(supply.ynft)+BigInt(distributedInBlock-burnedInBlock)).toString() }})
+            }
             cb(executedSuccesfully, distributedInBlock, burnedInBlock, vpInBlock)
         })
     },

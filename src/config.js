@@ -110,7 +110,7 @@ let config = {
 
             // amm swap fee (basis points)
             ammFee: 30,
-            ammPricePrecision: 8n,
+            ammPricePrecision: 8,
 
             // hf4
             maxKeys: 25,

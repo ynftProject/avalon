@@ -17,14 +17,14 @@ let amm = {
             // subsequent liquidity provider (price impact may occur due to rounding)
             let ynftBal = BigInt(pool.ynft)
             let tokenBal = BigInt(pool[tx.data.tokenSymbol])
-            let tokenPrice = (10n**config.ammPricePrecision)*ynftBal/tokenBal
-            let tokenAmountYnftValue = tokenAmount*tokenPrice/10n**config.ammPricePrecision
+            let tokenPrice = (10n**BigInt(config.ammPricePrecision))*ynftBal/tokenBal
+            let tokenAmountYnftValue = tokenAmount*tokenPrice/10n**BigInt(config.ammPricePrecision)
             if (tokenAmountYnftValue <= ynftAmount) {
                 ynftIn = tokenAmountYnftValue
                 tokenIn = tokenAmount
             } else {
                 ynftIn = ynftAmount
-                tokenIn = (10n**config.ammPricePrecision)*ynftAmount/tokenPrice
+                tokenIn = (10n**BigInt(config.ammPricePrecision))*ynftAmount/tokenPrice
             }
             let oldK = ynftBal*tokenBal
             lpOutput = (BigInt(pool.lpSupply)*((ynftBal+ynftIn)*tokenBal - oldK)/oldK)

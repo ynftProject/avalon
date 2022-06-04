@@ -82,7 +82,14 @@ module.exports = {
                 logr.econ('Unlock '+unlockYnftAmtInt+' YNFT for '+lockedGC+' locked GC')
                 event.tokenOutLocked = lockedGC.toString()
                 event.ynftUnlocked = unlockYnftAmtInt.toString()
-                set.tokenGCLock = (BigInt(swapper.tokenGCLock || 0) + lockedGC).toString()
+                await require('../token/transfer').execute({
+                    data: {
+                        symbol: 'GCLock',
+                        amount: lockedGC,
+                        receiver: tx.sender
+                    },
+                    sender: config.burnAccount
+                },ts,() => {})
             }
             if (unlockYnftAmtInt < ynftAmtInt) {
                 swapper = await cache.findOnePromise('accounts',{ name: tx.sender })

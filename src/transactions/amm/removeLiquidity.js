@@ -23,7 +23,15 @@ module.exports = {
             return cb(false, 'insufficient token output')
         else if (output.ynftOut < BigInt(tx.data.ynftOutMin))
             return cb(false, 'insufficient ynft output')
-        cb(true)
+        
+        require('../token/transfer').validate({
+            data: {
+                symbol: 'YNFT-'+tx.data.tokenSymbol+'-LP',
+                amount: tx.data.lpAmount,
+                receiver: config.burnAccount
+            },
+            sender: tx.sender
+        },ts,legitUser,() => cb(true))
     },
     execute: async (tx, ts, cb) => {
         let output = await amm.liquidityRemove(tx)

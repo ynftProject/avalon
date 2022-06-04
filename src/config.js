@@ -27,9 +27,6 @@ let config = {
             consensusRounds: 2,
             // the number of blocks from the past taken into consideration for econonomics
             ecoBlocks: 9600, // 8 hours
-            // the precision of the claimable amounts
-            ecoClaimPrecision: 3,
-            ecoRentPrecision: 6,
             // author and voter split in basis points
             ecoAuthorReward: 4500,
             ecoCurationReward: 4500,

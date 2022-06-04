@@ -288,9 +288,7 @@ let eco = {
             pel: Math.max(config.earningLimitFloor, Math.floor(config.earningLimitFactorPEL*Number(BigInt(avgs.earning.total)/BigInt(avgs.earning.count)))),
             rpel: Math.max(config.earningLimitFloor, Math.floor(config.earningLimitFactorRPEL*Number(BigInt(avgs.earning.total)/BigInt(avgs.earning.count)))),
         }
-    },
-    round: (val = 0) => Math.round(val*Math.pow(10,config.ecoClaimPrecision))/Math.pow(10,config.ecoClaimPrecision),
-    floor: (val = 0) => Math.floor(val*Math.pow(10,config.ecoClaimPrecision))/Math.pow(10,config.ecoClaimPrecision)
+    }
 } 
 
 module.exports = eco

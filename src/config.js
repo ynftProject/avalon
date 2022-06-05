@@ -91,6 +91,7 @@ let config = {
             vpGrowth: 360000000, // +1 vt per hour per DTC (3600 * 1000 * 100)
             vpCapFactor: 10,
             vpCapFloor: 1000000,
+            vpPerBurn: 22, // for account creation
 
             // earning limits
             earningLimitFactorPEL: 10,

@@ -47,10 +47,13 @@ module.exports = {
     },
     execute: async (tx, ts, cb) => {
         let newAccBw = {v:tx.data.bw,t:ts}
-        let newAccVt = {v:0,t:0}
+        let newAccVt = {v:0,t:ts}
         let baseBwGrowth = 0
-        if (config.preloadBwGrowth && (!config.masterNoPreloadAcc || tx.sender !== config.masterName || config.masterPaysForUsernames))
+        if (config.preloadBwGrowth && (!config.masterNoPreloadAcc || tx.sender !== config.masterName || config.masterPaysForUsernames)) {
             baseBwGrowth = Math.floor(eco.accountPrice(tx.data.name)/config.preloadBwGrowth)
+            newAccVt.v = eco.accountPrice(tx.data.name)*config.vpPerBurn
+        }
+        await transaction.adjustTvap(newAccVt.v)
         await cache.insertOnePromise('accounts', {
             name: tx.data.name.toLowerCase(),
             pub: tx.data.pub,

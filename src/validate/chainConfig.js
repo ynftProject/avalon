@@ -55,7 +55,7 @@ let parameters = {
     preloadBwGrowth: types.posFloat,
     vpCapFactor: types.posNonZeroFloat,
     vpCapFloor: types.posNonZeroInt,
-    vpPerBurn: types.posInt,
+    vpPerBurn: types.posFloat,
     earningLimitFactorPEL: types.posNonZeroFloat,
     earningLimitFactorRPEL: types.posNonZeroFloat,
     earningLimitFloor: types.posNonZeroInt,

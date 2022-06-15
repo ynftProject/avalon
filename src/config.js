@@ -2,10 +2,10 @@ let config = {
     history: {
         0: {
             // this is the block 0 configuration for mainnet
-            accountPriceBase: 20000,
+            accountPriceBase: 200000000,
             accountPriceCharMult: 4,
             accountPriceChars: 5,
-            accountPriceMin: 200,
+            accountPriceMin: 2000000,
             accountMaxLength: 50,
             accountMinLength: 1,
             // allowed username chars
@@ -20,7 +20,7 @@ let config = {
             // the block time in ms
             blockTime: 3000,
             // the number of ms needed for 0.01 DTC to generate 1 byte of bw
-            bwGrowth: 36000000, // +10 bytes per hour per DTC (3600 * 1000 * 100 / 10)
+            bwGrowth: 360000000000, // +10 bytes per hour per DTC (3600 * 1000 * 100 / 10)
             // the maximum bandwidth an account can have available
             bwMax: 64000,
             // the number of rounds of consensus before block is valid (min 2)
@@ -42,7 +42,7 @@ let config = {
             // the max length of a key identifier
             keyIdMaxLength: 25,
             // how many max leaders there can be, and how much tokens they earn per "mined" block
-            leaderReward: 1,
+            leaderReward: 20000,
             leaders: 15,
             // how long of the end of the block hash is used for the leader pseudo random generator shuffle
             leaderShufflePrecision: 6,
@@ -62,7 +62,7 @@ let config = {
             // the maximum time drift in ms before a block is invalid
             maxDrift: 200,
             // the maximum number of transactions in a single block
-            maxTxPerBlock: 20,
+            maxTxPerBlock: 200,
             // the max length of a transfer memo
             memoMaxLength: 250,
             // defines how long it takes for a notification to get deleted, and how often the purge happens
@@ -78,7 +78,7 @@ let config = {
             // the maximum share of the reward pool a single distribution can generate
             rewardPoolMaxShare: 0.1,
             // theoretical max reward pool in a cycle including leader rewards
-            rewardPoolAmount: 150001,
+            rewardPoolAmount: 1500000000,
             // the time after which transactions expire and wont be accepted by nodes anymore
             txExpirationTime: 60000,
             // limit which transactions are available
@@ -88,17 +88,17 @@ let config = {
                 12: 2
             },
             // the number of ms needed for 0.01 DTC to generate 1 vt
-            vpGrowth: 360000000, // +1 vt per hour per DTC (3600 * 1000 * 100)
+            vpGrowth: 3600000000000, // +1 vt per hour per DTC (3600 * 1000 * 100)
             vpCapFactor: 10,
             vpCapFloor: 1000000,
-            vpPerBurn: 22, // for account creation
+            vpPerBurn: 0.0022, // for account creation
 
             // earning limits
             earningLimitFactorPEL: 10,
             earningLimitFactorRPEL: 20,
             earningLimitFloor: 10000,
             earningLockNftPremium: 1.5, // 1.5x of listing price
-            distPoolCycle: 600,
+            distPoolCycle: 9600,
 
             // amm swap fee (basis points)
             ammFee: 30,
@@ -132,15 +132,15 @@ let config = {
             daoMembers: [],
             daoMembersMax: 100,
             daoVotingPeriodSeconds: 604800,
-            daoVotingThreshold: 50000000,
-            daoVotingLeaderBonus: 1000000,
-            chainUpdateFee: 30000,
+            daoVotingThreshold: 5000000000,
+            daoVotingLeaderBonus: 100000000,
+            chainUpdateFee: 300000000,
             chainUpdateMaxParams: 20,
             chainUpdateGracePeriodSeconds: 86400,
-            fundRequestBaseFee: 10000,
+            fundRequestBaseFee: 100000000,
             fundRequestSubFee: 1,
             fundRequestSubMult: 100,
-            fundRequestSubStart: 100000,
+            fundRequestSubStart: 1000000000,
             fundRequestContribPeriodSeconds: 1209600,
             fundRequestDeadlineSeconds: 31536000,
             fundRequestDeadlineExtSeconds: 2592000,
@@ -148,7 +148,7 @@ let config = {
 
             // master dao
             masterDao: false,
-            masterDaoTxs: [0,4,5,6,10,11,13,14,15,17,19,20,21,23,24,25,26,27,28,29,30,32],
+            masterDaoTxs: [0,1,2,4,5,6,9,10,11,12,14,15,16,17,18,22,23,24,25,26,27,28,29,30,32,40,41,42,43,44,45,46,47,48,49],
             masterDaoTxExp: 259200000,
 
             // maximum tx expiration allowed (block ts + 1 hour)

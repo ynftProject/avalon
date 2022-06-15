@@ -51,7 +51,7 @@ module.exports = {
         let baseBwGrowth = 0
         if (config.preloadBwGrowth && (!config.masterNoPreloadAcc || tx.sender !== config.masterName || config.masterPaysForUsernames)) {
             baseBwGrowth = Math.floor(eco.accountPrice(tx.data.name)/config.preloadBwGrowth)
-            newAccVt.v = eco.accountPrice(tx.data.name)*config.vpPerBurn
+            newAccVt.v = Math.floor(eco.accountPrice(tx.data.name)*config.vpPerBurn)
         }
         await transaction.adjustTvap(newAccVt.v)
         await cache.insertOnePromise('accounts', {

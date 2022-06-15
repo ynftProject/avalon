@@ -82,7 +82,8 @@ let parameters = {
     nftSaleFee: types.posBasisPoints,
     nftFloorPrice: types.posNonZeroInt,
     nftMaxExpSeconds: types.posNonZeroInt,
-    nftMaxBids: types.posNonZeroInt
+    nftMaxBids: types.posNonZeroInt,
+    nftMinVerifLvl: types.posInt
 }
 
 module.exports = {

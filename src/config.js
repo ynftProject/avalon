@@ -164,6 +164,8 @@ let config = {
             nftMaxExpSeconds: 2592000,
             // max bids per account
             nftMaxBids: 1000,
+            // minimum account verification level for creating NFTs
+            nftMinVerifLvl: 2,
 
             // genesis nft issued by master account
             nftGenesis: 500,

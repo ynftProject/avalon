@@ -18,6 +18,8 @@ module.exports = {
         if (!validate.json(tx.data.json, config.jsonMaxBytes)) {
             cb(false, 'invalid tx data.json'); return
         }
+        if (legitUser.verified < config.nftMinVerifLvl)
+            return cb(false, 'nft minter is below required on-chain verification level of '+config.nftMinVerifLvl)
         if (tx.data.pa && tx.data.pp) 
             // its a comment of another comment
             cache.findOne('contents', {_id: tx.data.pa+'/'+tx.data.pp}, function(err, content) {

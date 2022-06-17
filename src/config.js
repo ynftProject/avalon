@@ -104,6 +104,9 @@ let config = {
             ammFee: 30,
             ammPricePrecision: 8,
 
+            // gc exchange account
+            gcExchangeName: 'gc',
+
             // hf4
             maxKeys: 25,
             disallowVotingInactiveLeader: true,

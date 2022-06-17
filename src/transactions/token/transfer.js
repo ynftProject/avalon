@@ -27,7 +27,7 @@ module.exports = {
             return cb(false, 'insufficient token balance')
 
         // token lock specifics
-        if (tx.data.receiver !== config.burnAccount &&
+        if (tx.data.receiver !== config.gcExchangeName &&
             tx.data.symbol === 'GC' &&
             sender['tokenGCLock'] &&
             tokenBal - BigInt(sender['tokenGCLock']) < amount)
@@ -37,11 +37,24 @@ module.exports = {
     },
     execute: async (tx, ts, cb) => {
         if (tx.sender !== config.burnAccount) {
+            let amount = BigInt(tx.data.amount)
             let sender = await cache.findOnePromise('accounts',{ name: tx.sender })
-            let newBalance = BigInt(sender['token'+tx.data.symbol]) - BigInt(tx.data.amount)
+            let newBalance = BigInt(sender['token'+tx.data.symbol]) - amount
             await cache.updateOnePromise('accounts',{ name: tx.sender },{$set:{
                 ['token'+tx.data.symbol]: newBalance.toString()
             }})
+
+            // unlock gc token if sending to gc exchange account
+            if (tx.data.receiver === config.gcExchangeName && sender.GCLock && BigInt(sender.GCLock) > 0n) {
+                let gcUnlocked = BigInt(sender.GCLock)
+                if (gcUnlocked > amount)
+                    gcUnlocked = amount
+                await cache.updateOnePromise('accounts',{ name: tx.sender },{$set:{
+                    tokenGCLock: (BigInt(sender.GCLock) - gcUnlocked).toString()
+                }})
+                let tokenSupply = await cache.findOnePromise('state',{_id: 3})
+                await cache.updateOnePromise('state',{_id: 3},{$set:{GCLock: (BigInt(tokenSupply.GCLock)-gcUnlocked).toString() }})
+            }
         } else {
             let tokenSupply = await cache.findOnePromise('state',{_id: 3})
             await cache.updateOnePromise('state',{_id: 3},{$set:{[tx.data.symbol]: (BigInt(tokenSupply[tx.data.symbol] || 0)+BigInt(tx.data.amount)).toString() }})

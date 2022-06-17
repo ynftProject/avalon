@@ -159,6 +159,30 @@ let mongo = {
                 ts: 0
             }
         })
+
+        logr.info('Inserting GC exchange account: '+config.gcExchangeName)
+        await db.collection('accounts').insertOne({
+            name: config.gcExchangeName,
+            pub: config.masterPub,
+            balance: 0,
+            voteLock: 0,
+            earningLock: 0,
+            earnings: 0,
+            bw: {v:0,t:0},
+            vt: {v:0,t:0},
+            approves: [],
+            node_appr: 0,
+            follows: [],
+            followers: [],
+            keys: [],
+            proposalVotes: [],
+            nftBids: {},
+            verified: 1,
+            created: {
+                by: '',
+                ts: 0
+            }
+        })
     },
     insertBlockZero: async () => {
         if (process.env.BLOCKS_DIR) return

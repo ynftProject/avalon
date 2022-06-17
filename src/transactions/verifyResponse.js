@@ -12,13 +12,14 @@ module.exports = {
         let user = await cache.findOnePromise('accounts',{ name: tx.data.target })
         if (!user.verifyData || !user.verifyData.json)
             return cb(false, 'no verification data')
-        if (!dao.leaderSnapshot().includes(tx.sender))
+        if (!dao.leaderSnapshot(true).includes(tx.sender))
             return cb(false, 'verifier not in snapshot')
         cb(true)
     },
     execute: async (tx, ts, cb) => {
         let user = await cache.findOnePromise('accounts',{ name: tx.data.target })
-        let threshold = Math.ceil(dao.leaderSnapshot().length*2/3)
+        let snapshot = dao.leaderSnapshot(true)
+        let threshold = Math.ceil(snapshot.length*2/3)
         let verifies = 0
         let lvls = {}
         let isUpdate = false
@@ -27,7 +28,7 @@ module.exports = {
                 user.verifyData.approvals[i][1] = tx.data.approve
                 isUpdate = true
             }
-            if (user.verifyData.approvals[i][1] > 0) {
+            if (user.verifyData.approvals[i][1] > 0 && snapshot.includes(user.verifyData.approvals[i][0])) {
                 verifies++
                 if (!lvls[user.verifyData.approvals[i][1]])
                     lvls[user.verifyData.approvals[i][1]] = 1

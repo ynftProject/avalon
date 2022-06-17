@@ -106,6 +106,8 @@ let config = {
 
             // gc exchange account
             gcExchangeName: 'gc',
+            // verifiers who aren't dao members
+            verifiers: [],
 
             // hf4
             maxKeys: 25,

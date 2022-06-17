@@ -1,3 +1,5 @@
+const txHistory = require('../../txHistory')
+
 module.exports = {
     bsonValidate: true,
     fields: ['symbol','amount','receiver','memo'],
@@ -54,6 +56,10 @@ module.exports = {
                 }})
                 let tokenSupply = await cache.findOnePromise('state',{_id: 3})
                 await cache.updateOnePromise('state',{_id: 3},{$set:{GCLock: (BigInt(tokenSupply.GCLock)-gcUnlocked).toString() }})
+
+                txHistory.logEvent(tx.hash,{
+                    gcUnlocked: gcUnlocked.toString()
+                })
             }
         } else {
             let tokenSupply = await cache.findOnePromise('state',{_id: 3})
